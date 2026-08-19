@@ -19,3 +19,13 @@ export type Product = {
   priceNote?: string;
   notes?: string;
 };
+
+export type RoutineStep = { label: string; productId?: string };
+
+export type Routine = {
+  id: string;
+  name: string;
+  kind: 'AM' | 'PM' | 'custom';
+  steps: RoutineStep[];
+  dateCreated: string;
+};
