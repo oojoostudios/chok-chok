@@ -9,7 +9,8 @@ export const COLORS = {
 
 export type CategoryKey =
   | 'cleanser' | 'toner' | 'essence' | 'serum' | 'moisturizer'
-  | 'spf' | 'treatment' | 'mask' | 'eye' | 'lip' | 'other';
+  | 'spf' | 'treatment' | 'mask' | 'eye' | 'lip' | 'other'
+  | 'supplement' | 'vitamin' | 'mineral';
 
 type CatStyle = { bg: string; tint: string; ink: string; label: string };
 
@@ -25,4 +26,7 @@ export const CATEGORY: Record<CategoryKey, CatStyle> = {
   eye:         { bg: '#F0EAE2', tint: '#CBB79A', ink: '#6E5A3C', label: 'Eye' },
   lip:         { bg: '#EFE6E2', tint: '#C6A79C', ink: '#6E5248', label: 'Lip' },
   other:       { bg: '#EAE5E0', tint: '#BBB0A6', ink: '#5A5048', label: 'Other' },
+  supplement:  { bg: '#E7EEE4', tint: '#A9C09A', ink: '#4C5A42', label: 'Supplement' },
+  vitamin:     { bg: '#F3EAD3', tint: '#DCC589', ink: '#6E5A28', label: 'Vitamin' },
+  mineral:     { bg: '#E5E9EC', tint: '#A9B7BF', ink: '#465158', label: 'Mineral' },
 };

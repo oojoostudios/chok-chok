@@ -10,10 +10,12 @@ export type Product = {
   id: string;
   name: string;
   brand?: string;
+  type: 'beauty' | 'wellness';
   category: CategoryKey;
   concerns: Concern[];
   frequency: Frequency;
   status: 'have' | 'want';
+  dosage?: string;
   photoUri?: string;
   buyUrl?: string;
   priceNote?: string;

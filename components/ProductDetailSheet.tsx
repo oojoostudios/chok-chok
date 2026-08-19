@@ -17,6 +17,7 @@ export default function ProductDetailSheet({ product, visible, onClose }:{
 }) {
   if (!product) return null;
   const cat = CATEGORY[product.category] ?? CATEGORY.other;
+  const isWellness = product.type === 'wellness';
 
   const openBuy = () => { if (product.buyUrl) Linking.openURL(product.buyUrl); };
   const onShare = () => {
@@ -43,8 +44,9 @@ export default function ProductDetailSheet({ product, visible, onClose }:{
 
         <View style={styles.meta}>
           <Row label="Category" value={cat.label} />
-          <Row label="Concern" value={product.concerns.join(', ') || '—'} />
-          <Row label="Frequency" value={product.frequency} />
+          {isWellness && product.dosage ? <Row label="Dosage" value={product.dosage} /> : null}
+          <Row label={isWellness ? 'Timing' : 'Frequency'} value={product.frequency} />
+          {!isWellness && product.concerns.length > 0 ? <Row label="Concern" value={product.concerns.join(', ')} /> : null}
           {product.priceNote ? <Row label="Price" value={product.priceNote} /> : null}
         </View>
 
@@ -54,6 +56,10 @@ export default function ProductDetailSheet({ product, visible, onClose }:{
           </Pressable>
           <Pressable style={styles.share} onPress={onShare}><Text style={styles.shareText}>↗</Text></Pressable>
         </View>
+
+        {isWellness ? (
+          <Text style={styles.disclaimer}>Not medical advice. Talk to your doctor or pharmacist before starting a supplement.</Text>
+        ) : null}
       </View>
     </Modal>
   );
@@ -61,7 +67,7 @@ export default function ProductDetailSheet({ product, visible, onClose }:{
 
 const styles = StyleSheet.create({
   backdrop: { flex: 1, backgroundColor: 'rgba(40,32,28,0.42)' },
-  sheet: { backgroundColor: COLORS.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 18, paddingBottom: 30 },
+  sheet: { backgroundColor: COLORS.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 18, paddingBottom: 28 },
   handle: { width: 40, height: 4, borderRadius: 2, backgroundColor: '#D9CEC6', alignSelf: 'center', marginBottom: 14 },
   top: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   thumb: { width: 64, height: 64, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
@@ -79,4 +85,5 @@ const styles = StyleSheet.create({
   buyText: { color: '#F6EFEA', fontSize: 14, fontWeight: '600' },
   share: { width: 48, height: 48, borderRadius: 14, borderWidth: StyleSheet.hairlineWidth, borderColor: '#D9CEC6', alignItems: 'center', justifyContent: 'center' },
   shareText: { fontSize: 16, color: '#5A4F49' },
+  disclaimer: { marginTop: 14, fontSize: 11, color: COLORS.sub, textAlign: 'center', lineHeight: 15 },
 });
