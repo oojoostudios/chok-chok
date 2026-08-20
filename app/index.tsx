@@ -25,8 +25,8 @@ export default function CabinetScreen() {
   return (
     <SafeAreaView style={styles.screen}>
       <View style={styles.brandRow}>
-        <Text style={styles.brand}>Chok Chok</Text>
-        <Text style={styles.tagline}>my cabinet</Text>
+        <Text style={styles.brand}>Dodam</Text>
+        <Text style={styles.tagline}>routines worth sharing</Text>
       </View>
 
       <View style={styles.segment}>

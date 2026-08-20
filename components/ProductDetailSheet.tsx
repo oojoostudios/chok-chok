@@ -22,7 +22,7 @@ export default function ProductDetailSheet({ product, visible, onClose }:{
   const openBuy = () => { if (product.buyUrl) Linking.openURL(product.buyUrl); };
   const onShare = () => {
     const line = product.buyUrl ? `${product.name} — ${product.buyUrl}` : product.name;
-    Share.share({ message: `A pick from my Chok Chok cabinet:\n${line}` });
+    Share.share({ message: `A pick from my Dodam cabinet:\n${line}` });
   };
 
   return (

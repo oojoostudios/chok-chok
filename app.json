@@ -1,17 +1,19 @@
 {
   "expo": {
-    "name": "chok-chok",
-    "slug": "chok-chok",
+    "name": "Dodam",
+    "slug": "dodam",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "chokchok",
+    "scheme": "dodam",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.oojoostudios.dodam"
     },
     "android": {
+      "package": "com.oojoostudios.dodam",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
