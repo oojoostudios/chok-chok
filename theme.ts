@@ -1,3 +1,5 @@
+import type { Role } from './types';
+
 export const COLORS = {
   bg: '#EDE6E1',
   card: '#FBF8F6',
@@ -33,3 +35,21 @@ export const CATEGORY: Record<CategoryKey, CatStyle> = {
   vitamin:     { bg: '#F3EAD3', tint: '#D2BE87', tintStrong: '#A88F4C', ink: '#6E5A28', label: 'Vitamin' },
   mineral:     { bg: '#E5E9EC', tint: '#A6B4BC', tintStrong: '#718189', ink: '#465158', label: 'Mineral' },
 };
+
+// Beauty products read from ROLE; wellness stays on CATEGORY above.
+export const ROLE: Record<Role, CatStyle> = {
+  Remove:    { bg: '#EDE4DE', tint: '#B7A79C', tintStrong: '#6E4E38', ink: '#6E4E38', label: 'Remove' },
+  Cleanse:   { bg: '#E4EBE2', tint: '#9DB29A', tintStrong: '#4A5A46', ink: '#4A5A46', label: 'Cleanse' },
+  Exfoliate: { bg: '#F3E4DA', tint: '#D0A98F', tintStrong: '#8A5238', ink: '#8A5238', label: 'Exfoliate' },
+  Prep:      { bg: '#E4EEEC', tint: '#93B0AA', tintStrong: '#3F5E58', ink: '#3F5E58', label: 'Prep' },
+  Treat:     { bg: '#F3E2DA', tint: '#C89B84', tintStrong: '#8A5238', ink: '#8A5238', label: 'Treat' },
+  Seal:      { bg: '#F3E1E8', tint: '#C99DB0', tintStrong: '#8A4B60', ink: '#8A4B60', label: 'Seal' },
+  Protect:   { bg: '#F5EAD6', tint: '#CBAE79', tintStrong: '#7A5A1E', ink: '#7A5A1E', label: 'Protect' },
+  Targeted:  { bg: '#EDE7F1', tint: '#B3A6C2', tintStrong: '#5B4A72', ink: '#5B4A72', label: 'Targeted' },
+};
+
+// The one place that decides which taxonomy a product reads from.
+export function styleFor(product: { type: 'beauty' | 'wellness'; role?: Role; category: CategoryKey }): CatStyle {
+  if (product.type === 'beauty' && product.role) return ROLE[product.role];
+  return CATEGORY[product.category] ?? CATEGORY.other;
+}

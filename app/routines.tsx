@@ -3,7 +3,7 @@ import {
   View, Text, Pressable, ScrollView, TextInput, Modal, StyleSheet, SafeAreaView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { COLORS, CATEGORY } from '../theme';
+import { COLORS, styleFor } from '../theme';
 import type { Routine } from '../types';
 import { PRESETS, routineFromPreset, blankCustomRoutine, type Preset } from '../data/presetProtocols';
 import { SAMPLE_PRODUCTS } from '../data/sampleProducts';
@@ -129,7 +129,7 @@ export default function RoutinesScreen() {
 
         {d.steps.map((step, i) => {
           const product = productById(step.productId);
-          const cat = product ? (CATEGORY[product.category] ?? CATEGORY.other) : null;
+          const cat = product ? styleFor(product) : null;
           return (
             <View key={i} style={styles.stepRow}>
               <View style={styles.stepNum}><Text style={styles.stepNumText}>{i + 1}</Text></View>
@@ -177,7 +177,7 @@ export default function RoutinesScreen() {
           <Text style={styles.pickerTitle}>Choose a product</Text>
           <ScrollView style={{ maxHeight: 360 }}>
             {SAMPLE_PRODUCTS.map((p) => {
-              const cat = CATEGORY[p.category] ?? CATEGORY.other;
+              const cat = styleFor(p);
               return (
                 <Pressable key={p.id} style={styles.pickRow} onPress={() => pickerStep !== null && setStepProduct(pickerStep, p.id)}>
                   <View style={[styles.pickThumb, { backgroundColor: cat.bg }]}>

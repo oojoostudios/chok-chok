@@ -5,7 +5,7 @@ import Animated, {
   interpolate, Extrapolation, SharedValue,
 } from 'react-native-reanimated';
 import ProductCard from './ProductCard';
-import { COLORS, CATEGORY } from '../theme';
+import { COLORS, CATEGORY, styleFor } from '../theme';
 import type { Product } from '../types';
 
 const { width: SCREEN_W } = Dimensions.get('window');
@@ -50,7 +50,8 @@ export default function ProductRing({ products, onSelect }:{
     onScroll: (e) => { scrollX.value = e.contentOffset.x; },
   });
 
-  const cat = CATEGORY[products[active]?.category] ?? CATEGORY.other;
+  const current = products[active];
+  const cat = current ? styleFor(current) : CATEGORY.other;
 
   return (
     <View>

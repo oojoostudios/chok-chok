@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, Image, StyleSheet } from 'react-native';
-import { CATEGORY } from '../theme';
+import { styleFor } from '../theme';
 import type { Product } from '../types';
 import Silhouette from './Silhouette';
 import { iconFor } from '../data/formDefaults';
@@ -8,7 +8,7 @@ import { iconFor } from '../data/formDefaults';
 export default function ProductCard({ product, width, height }:{
   product: Product; width: number; height: number;
 }) {
-  const cat = CATEGORY[product.category] ?? CATEGORY.other;
+  const cat = styleFor(product);
   return (
     <View style={[styles.card, { width, height, backgroundColor: cat.bg }]}>
       <View style={styles.tag}>

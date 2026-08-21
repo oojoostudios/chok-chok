@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Modal, View, Text, Pressable, StyleSheet, Linking, Share } from 'react-native';
-import { COLORS, CATEGORY } from '../theme';
+import { COLORS, styleFor } from '../theme';
 import type { Product } from '../types';
 import Silhouette from './Silhouette';
 import ContainerPicker from './ContainerPicker';
@@ -22,7 +22,7 @@ export default function ProductDetailSheet({ product, visible, onClose, onChange
 }) {
   const [pickingIcon, setPickingIcon] = useState(false);
   if (!product) return null;
-  const cat = CATEGORY[product.category] ?? CATEGORY.other;
+  const cat = styleFor(product);
   const isWellness = product.type === 'wellness';
 
   const openBuy = () => { if (product.buyUrl) Linking.openURL(product.buyUrl); };
@@ -54,7 +54,7 @@ export default function ProductDetailSheet({ product, visible, onClose, onChange
         </View>
 
         <View style={styles.meta}>
-          <Row label="Category" value={cat.label} />
+          <Row label={isWellness ? 'Category' : 'Role'} value={cat.label} />
           {isWellness && product.dosage ? <Row label="Dosage" value={product.dosage} /> : null}
           <Row label={isWellness ? 'Timing' : 'Frequency'} value={product.frequency} />
           {!isWellness && product.concerns.length > 0 ? <Row label="Concern" value={product.concerns.join(', ')} /> : null}

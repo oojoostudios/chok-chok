@@ -7,6 +7,11 @@ export type Concern =
 
 export type Frequency = 'AM' | 'PM' | 'AM+PM' | 'weekly' | 'as-needed';
 
+// Beauty taxonomy: what a product DOES in a routine, not what it is.
+export type Role =
+  | 'Remove' | 'Cleanse' | 'Exfoliate' | 'Prep'
+  | 'Treat' | 'Seal' | 'Protect' | 'Targeted';
+
 export type Form =
   | 'dropper' | 'pump' | 'creamjar' | 'tube' | 'capsule'
   | 'gummy' | 'supp' | 'spray' | 'airpump';
@@ -16,7 +21,8 @@ export type Product = {
   name: string;
   brand?: string;
   type: 'beauty' | 'wellness';
-  category: CategoryKey;
+  category: CategoryKey;    // wellness taxonomy; beauty keeps it for icon defaults.
+  role?: Role;              // beauty taxonomy. Set on every beauty product.
   form?: Form;              // legacy form hint. Optional; defaults from category.
   icon?: IconId;            // container icon, e.g. 'bottle-3'. Defaults from category.
   concerns: Concern[];

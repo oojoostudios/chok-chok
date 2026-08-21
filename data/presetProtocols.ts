@@ -3,9 +3,9 @@ import type { Routine } from '../types';
 export type Preset = { name: string; kind: 'AM' | 'PM' | 'custom'; stepLabels: string[] };
 
 export const PRESETS: Preset[] = [
-  { name: 'Morning Routine', kind: 'AM', stepLabels: ['Cleanse', 'Brighten', 'Moisturize', 'Protect'] },
-  { name: 'PM Routine',      kind: 'PM', stepLabels: ['Cleanse', 'Treat', 'Moisturize', 'Nourish'] },
-  { name: 'Minimal',         kind: 'AM', stepLabels: ['Cleanse', 'Moisturize', 'Protect'] },
+  { name: 'Morning Routine', kind: 'AM', stepLabels: ['Cleanse', 'Treat', 'Seal', 'Protect'] },
+  { name: 'PM Routine',      kind: 'PM', stepLabels: ['Cleanse', 'Treat', 'Seal', 'Targeted'] },
+  { name: 'Minimal',         kind: 'AM', stepLabels: ['Cleanse', 'Seal', 'Protect'] },
 ];
 
 export function routineFromPreset(preset: Preset): Routine {
