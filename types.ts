@@ -6,12 +6,17 @@ export type Concern =
 
 export type Frequency = 'AM' | 'PM' | 'AM+PM' | 'weekly' | 'as-needed';
 
+export type Form =
+  | 'dropper' | 'pump' | 'creamjar' | 'tube' | 'capsule'
+  | 'gummy' | 'supp' | 'spray' | 'airpump';
+
 export type Product = {
   id: string;
   name: string;
   brand?: string;
   type: 'beauty' | 'wellness';
   category: CategoryKey;
+  form?: Form;              // drives the silhouette. Optional; defaults from category.
   concerns: Concern[];
   frequency: Frequency;
   status: 'have' | 'want';

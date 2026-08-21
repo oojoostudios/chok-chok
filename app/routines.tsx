@@ -8,6 +8,8 @@ import type { Routine } from '../types';
 import { PRESETS, routineFromPreset, blankCustomRoutine, type Preset } from '../data/presetProtocols';
 import { SAMPLE_PRODUCTS } from '../data/sampleProducts';
 import { loadRoutines, upsertRoutine, deleteRoutine } from '../storage';
+import Silhouette from '../components/Silhouette';
+import { formFor } from '../data/formDefaults';
 
 export default function RoutinesScreen() {
   const router = useRouter();
@@ -141,7 +143,7 @@ export default function RoutinesScreen() {
 
                 {product && cat ? (
                   <Pressable style={[styles.chip, { backgroundColor: cat.bg }]} onPress={() => clearStepProduct(i)}>
-                    <View style={[styles.chipBottle, { backgroundColor: cat.tint }]} />
+                    <Silhouette form={formFor(product)} color={cat.ink} width={16} height={24} strokeWidth={3} />
                     <Text style={[styles.chipName, { color: cat.ink }]} numberOfLines={1}>{product.name}</Text>
                     <Text style={styles.chipClear}>✕</Text>
                   </Pressable>
@@ -179,7 +181,7 @@ export default function RoutinesScreen() {
               return (
                 <Pressable key={p.id} style={styles.pickRow} onPress={() => pickerStep !== null && setStepProduct(pickerStep, p.id)}>
                   <View style={[styles.pickThumb, { backgroundColor: cat.bg }]}>
-                    <View style={[styles.chipBottle, { backgroundColor: cat.tint }]} />
+                    <Silhouette form={formFor(p)} color={cat.tint} width={28} height={42} />
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.pickName}>{p.name}</Text>
@@ -222,7 +224,6 @@ const styles = StyleSheet.create({
   stepLabelInput: { fontSize: 14, color: COLORS.ink, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: COLORS.line, paddingVertical: 4, marginBottom: 8 },
 
   chip: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 12, padding: 8 },
-  chipBottle: { width: 16, height: 30, borderRadius: 6 },
   chipName: { fontSize: 13, fontWeight: '600', flex: 1 },
   chipClear: { fontSize: 12, color: '#7C6F68' },
 

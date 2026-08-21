@@ -2,6 +2,8 @@ import React from 'react';
 import { View, Text, Image, StyleSheet } from 'react-native';
 import { CATEGORY } from '../theme';
 import type { Product } from '../types';
+import Silhouette from './Silhouette';
+import { formFor } from '../data/formDefaults';
 
 export default function ProductCard({ product, width, height }:{
   product: Product; width: number; height: number;
@@ -17,7 +19,7 @@ export default function ProductCard({ product, width, height }:{
         {product.photoUri ? (
           <Image source={{ uri: product.photoUri }} style={styles.image} resizeMode="contain" />
         ) : (
-          <View style={[styles.bottle, { backgroundColor: cat.tint }]} />
+          <Silhouette form={formFor(product)} color={cat.tint} width={64} height={96} />
         )}
       </View>
 
@@ -32,6 +34,5 @@ const styles = StyleSheet.create({
   tagText: { fontSize: 9, letterSpacing: 0.6, fontWeight: '600' },
   imageWrap: { flex: 1, width: '100%', alignItems: 'center', justifyContent: 'center' },
   image: { width: '80%', height: '80%' },
-  bottle: { width: 46, height: 96, borderRadius: 14 },
   name: { fontSize: 14, fontWeight: '600', marginTop: 8 },
 });

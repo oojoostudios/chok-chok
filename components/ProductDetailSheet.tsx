@@ -2,6 +2,8 @@ import React from 'react';
 import { Modal, View, Text, Pressable, StyleSheet, Linking, Share } from 'react-native';
 import { COLORS, CATEGORY } from '../theme';
 import type { Product } from '../types';
+import Silhouette from './Silhouette';
+import { formFor } from '../data/formDefaults';
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
@@ -33,7 +35,7 @@ export default function ProductDetailSheet({ product, visible, onClose }:{
 
         <View style={styles.top}>
           <View style={[styles.thumb, { backgroundColor: cat.bg }]}>
-            <View style={[styles.bottle, { backgroundColor: cat.tint }]} />
+            <Silhouette form={formFor(product)} color={cat.tint} width={34} height={51} />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={styles.name}>{product.name}</Text>
@@ -71,7 +73,6 @@ const styles = StyleSheet.create({
   handle: { width: 40, height: 4, borderRadius: 2, backgroundColor: '#D9CEC6', alignSelf: 'center', marginBottom: 14 },
   top: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   thumb: { width: 64, height: 64, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  bottle: { width: 20, height: 40, borderRadius: 7 },
   name: { fontSize: 16, color: COLORS.ink, fontWeight: '600' },
   brand: { fontSize: 12, color: COLORS.sub, marginTop: 2 },
   close: { width: 30, height: 30, borderRadius: 15, backgroundColor: '#EFE7E1', alignItems: 'center', justifyContent: 'center' },
