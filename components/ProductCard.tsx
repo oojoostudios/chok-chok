@@ -3,7 +3,7 @@ import { View, Text, Image, StyleSheet } from 'react-native';
 import { CATEGORY } from '../theme';
 import type { Product } from '../types';
 import Silhouette from './Silhouette';
-import { formFor } from '../data/formDefaults';
+import { iconFor } from '../data/formDefaults';
 
 export default function ProductCard({ product, width, height }:{
   product: Product; width: number; height: number;
@@ -19,7 +19,7 @@ export default function ProductCard({ product, width, height }:{
         {product.photoUri ? (
           <Image source={{ uri: product.photoUri }} style={styles.image} resizeMode="contain" />
         ) : (
-          <Silhouette form={formFor(product)} color={cat.tint} width={64} height={96} />
+          <Silhouette icon={iconFor(product)} color={cat.tint} size={64} />
         )}
       </View>
 

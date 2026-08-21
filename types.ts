@@ -1,4 +1,5 @@
 import type { CategoryKey } from './theme';
+import type { IconId } from './data/containerIcons';
 
 export type Concern =
   | 'hydration' | 'acne' | 'brightening' | 'anti-aging'
@@ -16,7 +17,8 @@ export type Product = {
   brand?: string;
   type: 'beauty' | 'wellness';
   category: CategoryKey;
-  form?: Form;              // drives the silhouette. Optional; defaults from category.
+  form?: Form;              // legacy form hint. Optional; defaults from category.
+  icon?: IconId;            // container icon, e.g. 'bottle-3'. Defaults from category.
   concerns: Concern[];
   frequency: Frequency;
   status: 'have' | 'want';

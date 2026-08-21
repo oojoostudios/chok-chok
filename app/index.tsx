@@ -6,15 +6,22 @@ import ProductDetailSheet from '../components/ProductDetailSheet';
 import { SAMPLE_PRODUCTS } from '../data/sampleProducts';
 import { COLORS } from '../theme';
 import type { Product } from '../types';
+import type { IconId } from '../data/containerIcons';
 
 type Filter = 'all' | 'beauty' | 'wellness';
 
 export default function CabinetScreen() {
   const router = useRouter();
+  const [all, setAll] = useState<Product[]>(SAMPLE_PRODUCTS);
   const [selected, setSelected] = useState<Product | null>(null);
   const [filter, setFilter] = useState<Filter>('all');
 
-  const products = SAMPLE_PRODUCTS.filter((p) => filter === 'all' || p.type === filter);
+  const products = all.filter((p) => filter === 'all' || p.type === filter);
+
+  const changeIcon = (productId: string, icon: IconId) => {
+    setAll((prev) => prev.map((p) => (p.id === productId ? { ...p, icon } : p)));
+    setSelected((prev) => (prev && prev.id === productId ? { ...prev, icon } : prev));
+  };
 
   const tabs: { key: Filter; label: string }[] = [
     { key: 'all', label: 'All' },
@@ -52,7 +59,12 @@ export default function CabinetScreen() {
         <Text style={styles.routinesText}>Routines ›</Text>
       </Pressable>
 
-      <ProductDetailSheet product={selected} visible={selected !== null} onClose={() => setSelected(null)} />
+      <ProductDetailSheet
+        product={selected}
+        visible={selected !== null}
+        onClose={() => setSelected(null)}
+        onChangeIcon={changeIcon}
+      />
     </SafeAreaView>
   );
 }

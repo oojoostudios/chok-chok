@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Modal, View, Text, Pressable, StyleSheet, Linking, Share } from 'react-native';
 import { COLORS, CATEGORY } from '../theme';
 import type { Product } from '../types';
 import Silhouette from './Silhouette';
-import { formFor } from '../data/formDefaults';
+import ContainerPicker from './ContainerPicker';
+import { iconFor } from '../data/formDefaults';
+import type { IconId } from '../data/containerIcons';
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
@@ -14,9 +16,11 @@ function Row({ label, value }: { label: string; value: string }) {
   );
 }
 
-export default function ProductDetailSheet({ product, visible, onClose }:{
+export default function ProductDetailSheet({ product, visible, onClose, onChangeIcon }:{
   product: Product | null; visible: boolean; onClose: () => void;
+  onChangeIcon?: (productId: string, icon: IconId) => void;
 }) {
+  const [pickingIcon, setPickingIcon] = useState(false);
   if (!product) return null;
   const cat = CATEGORY[product.category] ?? CATEGORY.other;
   const isWellness = product.type === 'wellness';
@@ -34,12 +38,17 @@ export default function ProductDetailSheet({ product, visible, onClose }:{
         <View style={styles.handle} />
 
         <View style={styles.top}>
-          <View style={[styles.thumb, { backgroundColor: cat.bg }]}>
-            <Silhouette form={formFor(product)} color={cat.tint} width={34} height={51} />
-          </View>
+          <Pressable
+            style={[styles.thumb, { backgroundColor: cat.bg }]}
+            onPress={() => onChangeIcon && setPickingIcon(true)}
+            disabled={!onChangeIcon}
+          >
+            <Silhouette icon={iconFor(product)} color={cat.tint} size={40} />
+          </Pressable>
           <View style={{ flex: 1 }}>
             <Text style={styles.name}>{product.name}</Text>
             {product.brand ? <Text style={styles.brand}>{product.brand}</Text> : null}
+            {onChangeIcon ? <Text style={styles.brand}>tap the icon to change container</Text> : null}
           </View>
           <Pressable onPress={onClose} style={styles.close}><Text style={styles.closeX}>✕</Text></Pressable>
         </View>
@@ -63,6 +72,16 @@ export default function ProductDetailSheet({ product, visible, onClose }:{
           <Text style={styles.disclaimer}>Not medical advice. Talk to your doctor or pharmacist before starting a supplement.</Text>
         ) : null}
       </View>
+
+      {onChangeIcon ? (
+        <ContainerPicker
+          visible={pickingIcon}
+          icon={iconFor(product)}
+          color={cat.tint}
+          onSelect={(id) => onChangeIcon(product.id, id)}
+          onClose={() => setPickingIcon(false)}
+        />
+      ) : null}
     </Modal>
   );
 }
