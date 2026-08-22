@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import {
   View, Text, Pressable, ScrollView, TextInput, StyleSheet, SafeAreaView,
-  KeyboardAvoidingView, Platform,
+  KeyboardAvoidingView, Platform, Keyboard,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { COLORS, ROLE } from '../theme';
 import type { Frequency, Product, Role } from '../types';
 import Silhouette from '../components/Silhouette';
-import { FAMILIES, DEFAULT_ICON, type IconId } from '../data/containerIcons';
+import { FAMILIES, DEFAULT_ICON, type Family, type IconId } from '../data/containerIcons';
 import { upsertProduct } from '../productStore';
 
 const ROLES = Object.keys(ROLE) as Role[];
@@ -36,12 +36,21 @@ export default function AddProductScreen() {
   const [brand, setBrand] = useState('');
   const [name, setName] = useState('');
   const [role, setRole] = useState<Role | undefined>();
+  const [family, setFamily] = useState<Family | undefined>();
   const [icon, setIcon] = useState<IconId | undefined>();
   const [timing, setTiming] = useState<Frequency | undefined>();
   const [notes, setNotes] = useState('');
 
   // Container tiles take the chosen role's tint; neutral until a role is picked.
   const tint = role ? ROLE[role].tint : '#C3B7AE';
+
+  // Second level: only the selected family's variants, and only when it has more than one.
+  const variants = FAMILIES.find((f) => f.family === family)?.variants ?? [];
+
+  const pickFamily = (f: Family) => {
+    setFamily(f);
+    setIcon(DEFAULT_ICON[f]);
+  };
   const canSave = Boolean(brand.trim() && name.trim() && role && icon && timing);
 
   const onSave = async () => {
@@ -71,7 +80,13 @@ export default function AddProductScreen() {
       </View>
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+        >
+        {/* Tapping any dead space between fields closes the keyboard. */}
+        <Pressable onPress={Keyboard.dismiss} accessible={false}>
           <Field label="BRAND">
             <TextInput
               value={brand}
@@ -113,15 +128,14 @@ export default function AddProductScreen() {
           <Field label="CONTAINER">
             <View style={styles.grid}>
               {FAMILIES.map((f) => {
-                const familyIcon = DEFAULT_ICON[f.family];
-                const active = icon === familyIcon;
+                const active = f.family === family;
                 return (
                   <Pressable
                     key={f.family}
-                    onPress={() => setIcon(familyIcon)}
+                    onPress={() => pickFamily(f.family)}
                     style={[styles.tile, active && styles.tileActive]}
                   >
-                    <Silhouette icon={familyIcon} color={tint} size={44} />
+                    <Silhouette icon={DEFAULT_ICON[f.family]} color={tint} size={44} />
                     <Text style={[styles.tileLabel, active && styles.tileLabelActive]} numberOfLines={1}>
                       {f.label}
                     </Text>
@@ -129,6 +143,29 @@ export default function AddProductScreen() {
                 );
               })}
             </View>
+
+            {variants.length > 1 ? (
+              <>
+                <Text style={styles.subLabel}>Shape</Text>
+                <View style={styles.variantRow}>
+                  {variants.map((v) => {
+                    const active = v.id === icon;
+                    return (
+                      <Pressable
+                        key={v.id}
+                        onPress={() => setIcon(v.id)}
+                        style={[styles.variant, active && styles.tileActive]}
+                      >
+                        <Silhouette icon={v.id} color={tint} size={40} />
+                        <Text style={[styles.tileLabel, active && styles.tileLabelActive]} numberOfLines={1}>
+                          {v.label}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </>
+            ) : null}
           </Field>
 
           <Field label="TIMING">
@@ -161,6 +198,7 @@ export default function AddProductScreen() {
             />
             <Text style={styles.counter}>{notes.length}/{NOTES_MAX}</Text>
           </Field>
+        </Pressable>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -169,6 +207,8 @@ export default function AddProductScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: COLORS.bg },
+  // Deep bottom padding so Notes clears the keyboard.
+  scrollContent: { padding: 18, paddingBottom: 300 },
   topbar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingTop: 8, paddingBottom: 6 },
   back: { width: 30, height: 30, alignItems: 'center', justifyContent: 'center' },
   backX: { fontSize: 26, color: COLORS.ink },
@@ -193,4 +233,8 @@ const styles = StyleSheet.create({
   tileActive: { borderColor: COLORS.ink, backgroundColor: '#F1E9E4' },
   tileLabel: { fontSize: 10, color: COLORS.sub, marginTop: 2 },
   tileLabelActive: { color: COLORS.ink, fontWeight: '600' },
+
+  subLabel: { fontSize: 11, color: COLORS.sub, marginTop: 16, marginBottom: 8 },
+  variantRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  variant: { width: 76, borderRadius: 14, borderWidth: 1, borderColor: 'transparent', backgroundColor: COLORS.card, alignItems: 'center', justifyContent: 'center', paddingVertical: 10, paddingHorizontal: 4 },
 });
