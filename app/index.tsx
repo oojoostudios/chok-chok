@@ -62,7 +62,13 @@ export default function CabinetScreen() {
         <ProductRing
           products={products}
           onSelect={setSelected}
-          onAdd={() => router.push('/add-product')}
+          // Adding from the Wellness tab opens the form already on wellness.
+          onAdd={() =>
+            router.push({
+              pathname: '/add-product',
+              params: { type: filter === 'wellness' ? 'wellness' : 'beauty' },
+            })
+          }
         />
       </View>
 

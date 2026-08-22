@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Silhouette from './Silhouette';
-import { COLORS, ROLE } from '../theme';
+import { COLORS, styleFor } from '../theme';
 import type { Routine, Product } from '../types';
 
 // Read-only, finished display of a routine. Used both for viewing in-app and
@@ -29,8 +29,8 @@ export default function RoutineCard({
 
       {routine.steps.map((step, i) => {
         const p = byId(step.productId);
-        const role = p?.role ? ROLE[p.role] : null;
-        const tint = role?.tint ?? COLORS.sub;
+        // Wellness reads goal, beauty reads role — same helper the cabinet uses.
+        const tint = p ? styleFor(p).tint : COLORS.sub;
         return (
           <View key={i} style={styles.step}>
             <View style={styles.stepNum}>

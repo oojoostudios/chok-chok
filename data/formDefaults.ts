@@ -1,5 +1,5 @@
 import type { CategoryKey } from '../theme';
-import type { Form } from '../types';
+import type { Form, Goal } from '../types';
 import { DEFAULT_ICON, type Family, type IconId } from './containerIcons';
 
 export const DEFAULT_FORM: Record<CategoryKey, Form> = {
@@ -41,8 +41,25 @@ export const CATEGORY_DEFAULT_FAMILY: Record<CategoryKey, Family> = {
   mineral:     'capsule',
 };
 
-export function iconFor(product: { icon?: IconId; category?: CategoryKey }): IconId {
+// Every goal starts on a capsule — the pill bottle and gummy are one tap away
+// in the container picker.
+export const GOAL_DEFAULT_FAMILY: Record<Goal, Family> = {
+  'Daily':        'capsule',
+  'Sleep & Calm': 'capsule',
+  'Energy':       'capsule',
+  'Gut':          'capsule',
+  'Immunity':     'capsule',
+  'Hormone':      'capsule',
+  'Skin & Hair':  'capsule',
+  'Targeted':     'capsule',
+};
+
+export function iconFor(product: { icon?: IconId; goal?: Goal; category?: CategoryKey }): IconId {
   if (product.icon) return product.icon;
-  const family = product.category ? CATEGORY_DEFAULT_FAMILY[product.category] : undefined;
+  const family = product.goal
+    ? GOAL_DEFAULT_FAMILY[product.goal]
+    : product.category
+      ? CATEGORY_DEFAULT_FAMILY[product.category]
+      : undefined;
   return family ? DEFAULT_ICON[family] : 'bottle-1';
 }

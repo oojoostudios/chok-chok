@@ -4,15 +4,26 @@ import {
   KeyboardAvoidingView, Platform, Keyboard,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { COLORS, ROLE } from '../theme';
-import type { Frequency, Product, Role } from '../types';
+import { COLORS, GOAL, ROLE } from '../theme';
+import type { Frequency, Goal, Product, Role } from '../types';
 import Silhouette from '../components/Silhouette';
 import { FAMILIES, DEFAULT_ICON, familyOf, type Family, type IconId } from '../data/containerIcons';
 import { iconFor } from '../data/formDefaults';
 import { loadProducts, upsertProduct } from '../productStore';
 import { allBrands, matchBrands, rememberBrand } from '../brandStore';
 
+type ProductType = 'beauty' | 'wellness';
+
 const ROLES = Object.keys(ROLE) as Role[];
+const GOALS = Object.keys(GOAL) as Goal[];
+
+const TYPES: { value: ProductType; label: string }[] = [
+  { value: 'beauty', label: 'Beauty' },
+  { value: 'wellness', label: 'Wellness' },
+];
+
+// Wellness starts on a capsule; every other container stays one tap away.
+const WELLNESS_DEFAULT_FAMILY: Family = 'capsule';
 
 const TIMINGS: { value: Frequency; label: string }[] = [
   { value: 'AM', label: 'AM' },
@@ -36,17 +47,25 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 export default function AddProductScreen() {
   const router = useRouter();
   // An `id` param turns this screen into an editor for that existing product.
-  const { id } = useLocalSearchParams<{ id?: string }>();
+  // A `type` param is the cabinet tab the user tapped Add from.
+  const { id, type: typeParam } = useLocalSearchParams<{ id?: string; type?: string }>();
   const editing = Boolean(id);
 
   const [existing, setExisting] = useState<Product | null>(null);
   const [hydrated, setHydrated] = useState(!id);
+  const [type, setType] = useState<ProductType>(typeParam === 'wellness' ? 'wellness' : 'beauty');
   const [brand, setBrand] = useState('');
   const [name, setName] = useState('');
   const [role, setRole] = useState<Role | undefined>();
-  const [family, setFamily] = useState<Family | undefined>();
-  const [icon, setIcon] = useState<IconId | undefined>();
+  const [goal, setGoal] = useState<Goal | undefined>();
+  const [family, setFamily] = useState<Family | undefined>(
+    typeParam === 'wellness' ? WELLNESS_DEFAULT_FAMILY : undefined
+  );
+  const [icon, setIcon] = useState<IconId | undefined>(
+    typeParam === 'wellness' ? DEFAULT_ICON[WELLNESS_DEFAULT_FAMILY] : undefined
+  );
   const [timing, setTiming] = useState<Frequency | undefined>();
+  const [dosage, setDosage] = useState('');
   const [notes, setNotes] = useState('');
   // Curated list merged with brands the user has typed before.
   const [brandPool, setBrandPool] = useState<string[]>([]);
@@ -63,12 +82,15 @@ export default function AddProductScreen() {
       if (found) {
         const existingIcon = iconFor(found);
         setExisting(found);
+        setType(found.type);
         setBrand(found.brand);
         setName(found.name);
         setRole(found.role);
+        setGoal(found.goal);
         setIcon(existingIcon);
         setFamily(familyOf(existingIcon));
         setTiming(found.timing ?? found.frequency);
+        setDosage(found.dosage ?? '');
         setNotes(found.notes ?? '');
       }
       setHydrated(true);
@@ -76,8 +98,18 @@ export default function AddProductScreen() {
     return () => { cancelled = true; };
   }, [id]);
 
-  // Container tiles take the chosen role's tint; neutral until a role is picked.
-  const tint = role ? ROLE[role].tint : '#C3B7AE';
+  // Container tiles take the chosen taxonomy's tint; neutral until one is picked.
+  const picked = type === 'wellness' ? (goal ? GOAL[goal] : null) : (role ? ROLE[role] : null);
+  const tint = picked?.tint ?? '#C3B7AE';
+
+  // Switching to wellness lands on the capsule so the form is savable sooner.
+  const pickType = (next: ProductType) => {
+    setType(next);
+    if (next === 'wellness' && !family) {
+      setFamily(WELLNESS_DEFAULT_FAMILY);
+      setIcon(DEFAULT_ICON[WELLNESS_DEFAULT_FAMILY]);
+    }
+  };
 
   // Second level: only the selected family's variants, and only when it has more than one.
   const variants = FAMILIES.find((f) => f.family === family)?.variants ?? [];
@@ -99,25 +131,29 @@ export default function AddProductScreen() {
   const showBrandSuggestions =
     brandSuggestions.length > 0 &&
     !brandSuggestions.some((b) => b.toLowerCase() === brand.trim().toLowerCase());
-  // Role is a beauty-only requirement; a wellness product edited here keeps its category.
-  const type = existing?.type ?? 'beauty';
+  // Beauty needs a role, wellness needs a goal — the same slot on either axis.
   const canSave = Boolean(
-    brand.trim() && name.trim() && icon && timing && (type === 'beauty' ? role : true)
+    brand.trim() && name.trim() && icon && timing && (type === 'wellness' ? goal : role)
   );
 
   const onSave = async () => {
     if (!canSave) return;
+    const wellness = type === 'wellness';
     const product: Product = {
-      // Spread first so fields this form doesn't cover (category, dosage,
-      // buyUrl, concerns…) survive an edit instead of being wiped.
+      // Spread first so fields this form doesn't cover (category, buyUrl,
+      // concerns…) survive an edit instead of being wiped.
       ...existing,
       id: existing?.id ?? String(Date.now()),
       brand: brand.trim(),
       name: name.trim(),
       type,
-      role,
+      // Only the axis this type reads from is kept, so a product switched
+      // between cabinets doesn't carry a stale role/goal/dosage.
+      role: wellness ? undefined : role,
+      goal: wellness ? goal : undefined,
       icon,
       timing: timing!,
+      dosage: wellness ? dosage.trim() || undefined : undefined,
       notes: notes.trim() || undefined,
     };
     await upsertProduct(product);
@@ -154,6 +190,23 @@ export default function AddProductScreen() {
         >
         {/* Tapping any dead space between fields closes the keyboard. */}
         <Pressable onPress={Keyboard.dismiss} accessible={false}>
+          <Field label="TYPE">
+            <View style={styles.pillWrap}>
+              {TYPES.map((t) => {
+                const active = t.value === type;
+                return (
+                  <Pressable
+                    key={t.value}
+                    onPress={() => pickType(t.value)}
+                    style={[styles.pill, active && styles.pillActive]}
+                  >
+                    <Text style={[styles.pillText, active && styles.pillTextActive]}>{t.label}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </Field>
+
           <Field label="BRAND">
             <TextInput
               value={brand}
@@ -189,23 +242,43 @@ export default function AddProductScreen() {
             />
           </Field>
 
-          <Field label="ROLE">
-            <View style={styles.pillWrap}>
-              {ROLES.map((r) => {
-                const active = r === role;
-                const s = ROLE[r];
-                return (
-                  <Pressable
-                    key={r}
-                    onPress={() => setRole(r)}
-                    style={[styles.pill, active && { backgroundColor: s.bg, borderColor: s.ink }]}
-                  >
-                    <Text style={[styles.pillText, active && { color: s.ink, fontWeight: '600' }]}>{s.label}</Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-          </Field>
+          {type === 'wellness' ? (
+            <Field label="GOAL">
+              <View style={styles.pillWrap}>
+                {GOALS.map((g) => {
+                  const active = g === goal;
+                  const s = GOAL[g];
+                  return (
+                    <Pressable
+                      key={g}
+                      onPress={() => setGoal(g)}
+                      style={[styles.pill, active && { backgroundColor: s.bg, borderColor: s.ink }]}
+                    >
+                      <Text style={[styles.pillText, active && { color: s.ink, fontWeight: '600' }]}>{s.label}</Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </Field>
+          ) : (
+            <Field label="ROLE">
+              <View style={styles.pillWrap}>
+                {ROLES.map((r) => {
+                  const active = r === role;
+                  const s = ROLE[r];
+                  return (
+                    <Pressable
+                      key={r}
+                      onPress={() => setRole(r)}
+                      style={[styles.pill, active && { backgroundColor: s.bg, borderColor: s.ink }]}
+                    >
+                      <Text style={[styles.pillText, active && { color: s.ink, fontWeight: '600' }]}>{s.label}</Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </Field>
+          )}
 
           <Field label="CONTAINER">
             <View style={styles.grid}>
@@ -267,6 +340,20 @@ export default function AddProductScreen() {
             </View>
           </Field>
 
+          {type === 'wellness' ? (
+            <Field label="DOSAGE (OPTIONAL)">
+              <TextInput
+                value={dosage}
+                onChangeText={setDosage}
+                placeholder="e.g. 1 capsule, 400mg"
+                placeholderTextColor={COLORS.sub}
+                style={styles.input}
+                autoCapitalize="none"
+              />
+              <Text style={styles.hint}>Kept private — dosage never appears on a shared routine.</Text>
+            </Field>
+          ) : null}
+
           <Field label="NOTES">
             <TextInput
               value={notes}
@@ -308,6 +395,7 @@ const styles = StyleSheet.create({
   suggestionDivider: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: COLORS.line },
   suggestionText: { fontSize: 15, color: COLORS.ink },
   counter: { alignSelf: 'flex-end', fontSize: 11, color: COLORS.sub, marginTop: 6 },
+  hint: { fontSize: 11, color: COLORS.sub, marginTop: 6 },
 
   pillWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   pill: { paddingHorizontal: 14, paddingVertical: 9, borderRadius: 20, borderWidth: 1, borderColor: 'transparent', backgroundColor: COLORS.card },
