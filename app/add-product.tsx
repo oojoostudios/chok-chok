@@ -10,6 +10,7 @@ import Silhouette from '../components/Silhouette';
 import { FAMILIES, DEFAULT_ICON, familyOf, type Family, type IconId } from '../data/containerIcons';
 import { iconFor } from '../data/formDefaults';
 import { loadProducts, upsertProduct } from '../productStore';
+import { allBrands, matchBrands, rememberBrand } from '../brandStore';
 
 const ROLES = Object.keys(ROLE) as Role[];
 
@@ -47,6 +48,11 @@ export default function AddProductScreen() {
   const [icon, setIcon] = useState<IconId | undefined>();
   const [timing, setTiming] = useState<Frequency | undefined>();
   const [notes, setNotes] = useState('');
+  // Curated list merged with brands the user has typed before.
+  const [brandPool, setBrandPool] = useState<string[]>([]);
+  const [brandSuggestions, setBrandSuggestions] = useState<string[]>([]);
+
+  useEffect(() => { allBrands().then(setBrandPool); }, []);
 
   useEffect(() => {
     if (!id) return;
@@ -80,6 +86,19 @@ export default function AddProductScreen() {
     setFamily(f);
     setIcon(DEFAULT_ICON[f]);
   };
+
+  const onChangeBrand = (text: string) => {
+    setBrand(text);
+    setBrandSuggestions(matchBrands(text, brandPool, 6));
+  };
+  const pickBrand = (b: string) => {
+    setBrand(b);
+    setBrandSuggestions([]);
+  };
+  // Once what's typed matches a suggestion outright, the list has nothing left to offer.
+  const showBrandSuggestions =
+    brandSuggestions.length > 0 &&
+    !brandSuggestions.some((b) => b.toLowerCase() === brand.trim().toLowerCase());
   // Role is a beauty-only requirement; a wellness product edited here keeps its category.
   const type = existing?.type ?? 'beauty';
   const canSave = Boolean(
@@ -102,6 +121,7 @@ export default function AddProductScreen() {
       notes: notes.trim() || undefined,
     };
     await upsertProduct(product);
+    await rememberBrand(brand.trim());
     router.back();
   };
 
@@ -137,11 +157,26 @@ export default function AddProductScreen() {
           <Field label="BRAND">
             <TextInput
               value={brand}
-              onChangeText={setBrand}
+              onChangeText={onChangeBrand}
               placeholder="e.g. Beauty of Joseon"
               placeholderTextColor={COLORS.sub}
               style={styles.input}
+              autoCorrect={false}
+              autoCapitalize="words"
             />
+            {showBrandSuggestions ? (
+              <View style={styles.suggestions}>
+                {brandSuggestions.map((b, i) => (
+                  <Pressable
+                    key={b}
+                    onPress={() => pickBrand(b)}
+                    style={[styles.suggestion, i > 0 && styles.suggestionDivider]}
+                  >
+                    <Text style={styles.suggestionText}>{b}</Text>
+                  </Pressable>
+                ))}
+              </View>
+            ) : null}
           </Field>
 
           <Field label="PRODUCT">
@@ -267,6 +302,11 @@ const styles = StyleSheet.create({
   fieldLabel: { fontSize: 12, letterSpacing: 0.8, textTransform: 'uppercase', color: COLORS.sub, marginBottom: 10 },
   input: { backgroundColor: COLORS.card, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: COLORS.ink },
   notes: { minHeight: 96, paddingTop: 12 },
+
+  suggestions: { marginTop: 6, backgroundColor: COLORS.card, borderRadius: 12, overflow: 'hidden' },
+  suggestion: { paddingHorizontal: 14, paddingVertical: 11 },
+  suggestionDivider: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: COLORS.line },
+  suggestionText: { fontSize: 15, color: COLORS.ink },
   counter: { alignSelf: 'flex-end', fontSize: 11, color: COLORS.sub, marginTop: 6 },
 
   pillWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
