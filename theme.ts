@@ -49,7 +49,7 @@ export const ROLE: Record<Role, CatStyle> = {
 };
 
 // The one place that decides which taxonomy a product reads from.
-export function styleFor(product: { type: 'beauty' | 'wellness'; role?: Role; category: CategoryKey }): CatStyle {
+export function styleFor(product: { type: 'beauty' | 'wellness'; role?: Role; category?: CategoryKey }): CatStyle {
   if (product.type === 'beauty' && product.role) return ROLE[product.role];
-  return CATEGORY[product.category] ?? CATEGORY.other;
+  return (product.category ? CATEGORY[product.category] : undefined) ?? CATEGORY.other;
 }

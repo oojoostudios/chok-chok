@@ -19,8 +19,8 @@ export const DEFAULT_FORM: Record<CategoryKey, Form> = {
   mineral:     'capsule',
 };
 
-export function formFor(product: { form?: Form; category: CategoryKey }): Form {
-  return product.form ?? DEFAULT_FORM[product.category] ?? 'creamjar';
+export function formFor(product: { form?: Form; category?: CategoryKey }): Form {
+  return product.form ?? (product.category ? DEFAULT_FORM[product.category] : undefined) ?? 'creamjar';
 }
 
 // A product with no icon of its own still shows something on-brand.
@@ -41,8 +41,8 @@ export const CATEGORY_DEFAULT_FAMILY: Record<CategoryKey, Family> = {
   mineral:     'capsule',
 };
 
-export function iconFor(product: { icon?: IconId; category: CategoryKey }): IconId {
+export function iconFor(product: { icon?: IconId; category?: CategoryKey }): IconId {
   if (product.icon) return product.icon;
-  const family = CATEGORY_DEFAULT_FAMILY[product.category];
+  const family = product.category ? CATEGORY_DEFAULT_FAMILY[product.category] : undefined;
   return family ? DEFAULT_ICON[family] : 'bottle-1';
 }

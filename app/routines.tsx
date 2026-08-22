@@ -4,9 +4,9 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { COLORS, styleFor } from '../theme';
-import type { Routine } from '../types';
+import type { Product, Routine } from '../types';
 import { PRESETS, routineFromPreset, blankCustomRoutine, type Preset } from '../data/presetProtocols';
-import { SAMPLE_PRODUCTS } from '../data/sampleProducts';
+import { loadProducts } from '../productStore';
 import { loadRoutines, upsertRoutine, deleteRoutine } from '../storage';
 import Silhouette from '../components/Silhouette';
 import { iconFor } from '../data/formDefaults';
@@ -16,15 +16,17 @@ export default function RoutinesScreen() {
   const [mode, setMode] = useState<'list' | 'builder'>('list');
   const [draft, setDraft] = useState<Routine | null>(null);
   const [saved, setSaved] = useState<Routine[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [pickerStep, setPickerStep] = useState<number | null>(null);
 
   useEffect(() => { loadRoutines().then(setSaved); }, []);
+  useEffect(() => { loadProducts().then(setProducts); }, []);
 
   const openPreset = (p: Preset) => { setDraft(routineFromPreset(p)); setMode('builder'); };
   const openCustom = () => { setDraft(blankCustomRoutine()); setMode('builder'); };
   const openSaved = (r: Routine) => { setDraft({ ...r, steps: r.steps.map((s) => ({ ...s })) }); setMode('builder'); };
 
-  const productById = (id?: string) => SAMPLE_PRODUCTS.find((p) => p.id === id);
+  const productById = (id?: string) => products.find((p) => p.id === id);
 
   const setStepProduct = (i: number, productId: string) => {
     if (!draft) return;
@@ -176,7 +178,10 @@ export default function RoutinesScreen() {
           <View style={styles.handle} />
           <Text style={styles.pickerTitle}>Choose a product</Text>
           <ScrollView style={{ maxHeight: 360 }}>
-            {SAMPLE_PRODUCTS.map((p) => {
+            {products.length === 0 ? (
+              <Text style={styles.pickEmpty}>No products yet. Add one to your cabinet first.</Text>
+            ) : null}
+            {products.map((p) => {
               const cat = styleFor(p);
               return (
                 <Pressable key={p.id} style={styles.pickRow} onPress={() => pickerStep !== null && setStepProduct(pickerStep, p.id)}>
@@ -243,4 +248,5 @@ const styles = StyleSheet.create({
   pickThumb: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   pickName: { fontSize: 14, color: COLORS.ink, fontWeight: '600' },
   pickCat: { fontSize: 12, color: COLORS.sub, marginTop: 2 },
+  pickEmpty: { fontSize: 13, color: COLORS.sub, textAlign: 'center', paddingVertical: 24 },
 });

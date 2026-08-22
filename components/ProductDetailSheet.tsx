@@ -56,8 +56,8 @@ export default function ProductDetailSheet({ product, visible, onClose, onChange
         <View style={styles.meta}>
           <Row label={isWellness ? 'Category' : 'Role'} value={cat.label} />
           {isWellness && product.dosage ? <Row label="Dosage" value={product.dosage} /> : null}
-          <Row label={isWellness ? 'Timing' : 'Frequency'} value={product.frequency} />
-          {!isWellness && product.concerns.length > 0 ? <Row label="Concern" value={product.concerns.join(', ')} /> : null}
+          <Row label="Timing" value={product.timing ?? product.frequency ?? '—'} />
+          {!isWellness && product.concerns?.length ? <Row label="Concern" value={product.concerns.join(', ')} /> : null}
           {product.priceNote ? <Row label="Price" value={product.priceNote} /> : null}
         </View>
 

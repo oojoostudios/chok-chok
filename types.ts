@@ -18,21 +18,24 @@ export type Form =
 
 export type Product = {
   id: string;
-  name: string;
-  brand?: string;
+  brand: string;            // REQUIRED
+  name: string;             // REQUIRED
   type: 'beauty' | 'wellness';
-  category: CategoryKey;    // wellness taxonomy; beauty keeps it for icon defaults.
-  role?: Role;              // beauty taxonomy. Set on every beauty product.
-  form?: Form;              // legacy form hint. Optional; defaults from category.
-  icon?: IconId;            // container icon, e.g. 'bottle-3'. Defaults from category.
-  concerns: Concern[];
-  frequency: Frequency;
-  status: 'have' | 'want';
+  role?: Role;              // beauty: required in the form; wellness may omit
+  icon?: IconId;            // container icon id, e.g. 'dropper-1'
+  timing: Frequency;        // canonical timing field the form writes
+  notes?: string;           // max 300 chars (enforced in the form)
+
+  // Kept for wellness + later builds:
+  category?: CategoryKey;   // wellness taxonomy; also drives icon defaults
+  form?: Form;              // legacy form hint
+  concerns?: Concern[];
+  frequency?: Frequency;    // legacy; prefer `timing`
+  status?: 'have' | 'want';
   dosage?: string;
   photoUri?: string;
   buyUrl?: string;
   priceNote?: string;
-  notes?: string;
 };
 
 export type RoutineStep = { label: string; productId?: string };

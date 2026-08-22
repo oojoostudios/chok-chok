@@ -5,8 +5,14 @@ import Animated, {
   interpolate, Extrapolation, SharedValue,
 } from 'react-native-reanimated';
 import ProductCard from './ProductCard';
-import { COLORS, CATEGORY, styleFor } from '../theme';
+import AddProductCard from './AddProductCard';
+import { COLORS, styleFor } from '../theme';
 import type { Product } from '../types';
+
+// The Add card always leads the ring; product cards follow.
+const ADD_ID = '__add__';
+type Entry = { id: typeof ADD_ID } | { id: string; product: Product };
+const isAdd = (e: Entry): e is { id: typeof ADD_ID } => e.id === ADD_ID;
 
 const { width: SCREEN_W } = Dimensions.get('window');
 const CARD_W = 176;
@@ -14,8 +20,8 @@ const CARD_H = 232;
 const ITEM_W = CARD_W + 18;              // snap interval
 const SIDE = (SCREEN_W - ITEM_W) / 2;    // centers first & last card
 
-function RingItem({ product, index, scrollX, onPress }:{
-  product: Product; index: number; scrollX: SharedValue<number>; onPress: () => void;
+function RingItem({ entry, index, scrollX, onPress }:{
+  entry: Entry; index: number; scrollX: SharedValue<number>; onPress: () => void;
 }) {
   const style = useAnimatedStyle(() => {
     const input = [(index - 1) * ITEM_W, index * ITEM_W, (index + 1) * ITEM_W];
@@ -33,15 +39,19 @@ function RingItem({ product, index, scrollX, onPress }:{
     <View style={{ width: ITEM_W, alignItems: 'center' }}>
       <Pressable onPress={onPress}>
         <Animated.View style={style}>
-          <ProductCard product={product} width={CARD_W} height={CARD_H} />
+          {isAdd(entry) ? (
+            <AddProductCard width={CARD_W} height={CARD_H} />
+          ) : (
+            <ProductCard product={entry.product} width={CARD_W} height={CARD_H} />
+          )}
         </Animated.View>
       </Pressable>
     </View>
   );
 }
 
-export default function ProductRing({ products, onSelect }:{
-  products: Product[]; onSelect: (p: Product) => void;
+export default function ProductRing({ products, onSelect, onAdd }:{
+  products: Product[]; onSelect: (p: Product) => void; onAdd: () => void;
 }) {
   const scrollX = useSharedValue(0);
   const [active, setActive] = useState(0);
@@ -50,14 +60,19 @@ export default function ProductRing({ products, onSelect }:{
     onScroll: (e) => { scrollX.value = e.contentOffset.x; },
   });
 
-  const current = products[active];
-  const cat = current ? styleFor(current) : CATEGORY.other;
+  const entries: Entry[] = [{ id: ADD_ID }, ...products.map((p) => ({ id: p.id, product: p }))];
+  const current = entries[active];
+  const onAddCard = !current || isAdd(current);
 
   return (
     <View>
       <View style={styles.header}>
-        <Text style={styles.catLabel}>{cat.label}</Text>
-        <Text style={styles.counter}>{active + 1} / {products.length}</Text>
+        <Text style={styles.catLabel}>{onAddCard ? 'Add product' : styleFor(current.product).label}</Text>
+        <Text style={styles.counter}>
+          {onAddCard
+            ? (products.length === 0 ? 'Cabinet is empty' : `${products.length} in cabinet`)
+            : `${active} / ${products.length}`}
+        </Text>
       </View>
 
       <Animated.ScrollView
@@ -69,12 +84,18 @@ export default function ProductRing({ products, onSelect }:{
         onScroll={onScroll}
         onMomentumScrollEnd={(e) => {
           const i = Math.round(e.nativeEvent.contentOffset.x / ITEM_W);
-          setActive(Math.max(0, Math.min(products.length - 1, i)));
+          setActive(Math.max(0, Math.min(entries.length - 1, i)));
         }}
         contentContainerStyle={{ paddingHorizontal: SIDE, alignItems: 'center', height: CARD_H + 40 }}
       >
-        {products.map((p, i) => (
-          <RingItem key={p.id} product={p} index={i} scrollX={scrollX} onPress={() => onSelect(p)} />
+        {entries.map((entry, i) => (
+          <RingItem
+            key={entry.id}
+            entry={entry}
+            index={i}
+            scrollX={scrollX}
+            onPress={() => (isAdd(entry) ? onAdd() : onSelect(entry.product))}
+          />
         ))}
       </Animated.ScrollView>
 
