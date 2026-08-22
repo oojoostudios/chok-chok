@@ -63,17 +63,12 @@ export default function ProductDetailSheet({ product, visible, onClose, onChange
         <View style={styles.handle} />
 
         <View style={styles.top}>
-          <Pressable
-            style={[styles.thumb, { backgroundColor: cat.bg }]}
-            onPress={() => onChangeIcon && setPickingIcon(true)}
-            disabled={!onChangeIcon}
-          >
+          <View style={[styles.thumb, { backgroundColor: cat.bg }]}>
             <Silhouette icon={iconFor(p)} color={cat.tint} size={40} />
-          </Pressable>
+          </View>
           <View style={{ flex: 1 }}>
             <Text style={styles.name}>{p.name}</Text>
             {p.brand ? <Text style={styles.brand}>{p.brand}</Text> : null}
-            {onChangeIcon ? <Text style={styles.brand}>tap the icon to change container</Text> : null}
           </View>
           {onEdit ? (
             <Pressable onPress={() => { onClose(); onEdit(p); }} hitSlop={8} style={styles.edit}>
