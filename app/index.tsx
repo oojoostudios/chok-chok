@@ -75,6 +75,8 @@ export default function CabinetScreen() {
         visible={selected !== null}
         onClose={() => setSelected(null)}
         onChangeIcon={changeIcon}
+        onEdit={(p) => router.push({ pathname: '/add-product', params: { id: p.id } })}
+        onDeleted={setAll}
       />
     </SafeAreaView>
   );

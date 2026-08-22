@@ -1,32 +1,69 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
-  View, Text, Pressable, ScrollView, TextInput, Modal, StyleSheet, SafeAreaView,
+  View, Text, Pressable, ScrollView, TextInput, Modal, StyleSheet, SafeAreaView, Alert,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
+import ViewShot from 'react-native-view-shot';
+import * as Sharing from 'expo-sharing';
 import { COLORS, styleFor } from '../theme';
 import type { Product, Routine } from '../types';
 import { PRESETS, routineFromPreset, blankCustomRoutine, type Preset } from '../data/presetProtocols';
 import { loadProducts } from '../productStore';
 import { loadRoutines, upsertRoutine, deleteRoutine } from '../storage';
+import RoutineCard from '../components/RoutineCard';
 import Silhouette from '../components/Silhouette';
 import { iconFor } from '../data/formDefaults';
 
 export default function RoutinesScreen() {
   const router = useRouter();
-  const [mode, setMode] = useState<'list' | 'builder'>('list');
+  const [mode, setMode] = useState<'list' | 'view' | 'builder'>('list');
   const [draft, setDraft] = useState<Routine | null>(null);
   const [saved, setSaved] = useState<Routine[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [pickerStep, setPickerStep] = useState<number | null>(null);
+  // Remembers whether the builder was entered from the finished card, so back
+  // and save return there instead of dropping all the way out to the list.
+  const [fromView, setFromView] = useState(false);
+  const [sharing, setSharing] = useState(false);
+  const shotRef = useRef<ViewShot>(null);
 
   useEffect(() => { loadRoutines().then(setSaved); }, []);
-  useEffect(() => { loadProducts().then(setProducts); }, []);
 
-  const openPreset = (p: Preset) => { setDraft(routineFromPreset(p)); setMode('builder'); };
-  const openCustom = () => { setDraft(blankCustomRoutine()); setMode('builder'); };
-  const openSaved = (r: Routine) => { setDraft({ ...r, steps: r.steps.map((s) => ({ ...s })) }); setMode('builder'); };
+  // Products can change while we're away (add/edit/delete in the cabinet), so
+  // the card and the picker reload on focus rather than once on mount.
+  useFocusEffect(
+    React.useCallback(() => { loadProducts().then(setProducts); }, [])
+  );
+
+  const openPreset = (p: Preset) => { setFromView(false); setDraft(routineFromPreset(p)); setMode('builder'); };
+  const openCustom = () => { setFromView(false); setDraft(blankCustomRoutine()); setMode('builder'); };
+  // Saved routines open on the finished card; Edit from there enters the builder.
+  const openSaved = (r: Routine) => { setFromView(false); setDraft({ ...r, steps: r.steps.map((s) => ({ ...s })) }); setMode('view'); };
 
   const productById = (id?: string) => products.find((p) => p.id === id);
+
+  // Captures the RoutineCard as a PNG and hands it to the system share sheet.
+  const onShare = async () => {
+    if (sharing) return;
+    setSharing(true);
+    try {
+      const uri = await shotRef.current?.capture?.();
+      if (!uri) throw new Error('capture returned no uri');
+      if (!(await Sharing.isAvailableAsync())) {
+        Alert.alert('Sharing unavailable', 'This device can’t open the share sheet.');
+        return;
+      }
+      await Sharing.shareAsync(uri, {
+        mimeType: 'image/png',
+        UTI: 'public.png',
+        dialogTitle: `${draft?.name ?? 'Routine'} · Dodam`,
+      });
+    } catch {
+      Alert.alert('Couldn’t share', 'Something went wrong making the image. Try again.');
+    } finally {
+      setSharing(false);
+    }
+  };
 
   const setStepProduct = (i: number, productId: string) => {
     if (!draft) return;
@@ -54,10 +91,25 @@ export default function RoutinesScreen() {
     if (!draft) return;
     const all = await upsertRoutine(draft);
     setSaved(all);
+    // Editing an existing routine drops back onto its finished card.
+    if (fromView) { setMode('view'); return; }
     setMode('list');
     setDraft(null);
   };
   const remove = async (id: string) => setSaved(await deleteRoutine(id));
+
+  // Backing out of the builder discards the edits, so the card has to be shown
+  // the last *saved* version rather than the abandoned draft.
+  const leaveBuilder = () => {
+    if (fromView && draft) {
+      const pristine = saved.find((r) => r.id === draft.id);
+      if (pristine) setDraft({ ...pristine, steps: pristine.steps.map((s) => ({ ...s })) });
+      setMode('view');
+      return;
+    }
+    setMode('list');
+    setDraft(null);
+  };
 
   // -------- LIST --------
   if (mode === 'list') {
@@ -107,13 +159,49 @@ export default function RoutinesScreen() {
     );
   }
 
+  // -------- VIEW (finished card) --------
+  if (mode === 'view') {
+    const r = draft!;
+    return (
+      <SafeAreaView style={styles.screen}>
+        <View style={styles.topbar}>
+          <Pressable
+            onPress={() => { setFromView(false); setMode('list'); setDraft(null); }}
+            style={styles.back}
+          >
+            <Text style={styles.backX}>‹</Text>
+          </Pressable>
+          <Text style={styles.title} numberOfLines={1}>{r.name}</Text>
+          <Pressable onPress={() => { setFromView(true); setMode('builder'); }} hitSlop={10}>
+            <Text style={styles.save}>Edit</Text>
+          </Pressable>
+        </View>
+
+        <ScrollView contentContainerStyle={styles.viewContent}>
+          {/* ViewShot wraps only the card — capturing the ScrollView clips the image. */}
+          <ViewShot ref={shotRef} options={{ format: 'png', quality: 1 }}>
+            <RoutineCard routine={r} products={products} forShare />
+          </ViewShot>
+
+          <Pressable
+            style={[styles.shareBtn, sharing && styles.shareBtnBusy]}
+            onPress={onShare}
+            disabled={sharing}
+          >
+            <Text style={styles.shareBtnText}>{sharing ? 'Preparing…' : 'Share routine'}</Text>
+          </Pressable>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
   // -------- BUILDER --------
   const d = draft!;
   const isCustom = d.kind === 'custom';
   return (
     <SafeAreaView style={styles.screen}>
       <View style={styles.topbar}>
-        <Pressable onPress={() => { setMode('list'); setDraft(null); }} style={styles.back}><Text style={styles.backX}>‹</Text></Pressable>
+        <Pressable onPress={leaveBuilder} style={styles.back}><Text style={styles.backX}>‹</Text></Pressable>
         <Text style={styles.title} numberOfLines={1}>{isCustom ? 'Custom Protocol' : d.name}</Text>
         <Pressable onPress={save} hitSlop={10}><Text style={styles.save}>Save</Text></Pressable>
       </View>
@@ -216,6 +304,13 @@ const styles = StyleSheet.create({
   rowSub: { fontSize: 12, color: COLORS.sub, marginTop: 3 },
   chev: { fontSize: 20, color: COLORS.sub, marginLeft: 8 },
   del: { fontSize: 12, color: '#B5675A', fontWeight: '600' },
+
+  // No horizontal padding: the card is a fixed 380pt wide for capture, so it is
+  // centred and allowed to use the full screen width instead of being clipped.
+  viewContent: { paddingVertical: 18, paddingBottom: 40, alignItems: 'center' },
+  shareBtn: { marginTop: 22, backgroundColor: COLORS.ink, borderRadius: 20, paddingHorizontal: 26, paddingVertical: 12 },
+  shareBtnBusy: { opacity: 0.6 },
+  shareBtnText: { color: '#F6EFEA', fontSize: 14, fontWeight: '600' },
 
   customBtn: { borderWidth: 1, borderColor: '#C3B7AE', borderStyle: 'dashed', borderRadius: 14, padding: 14, alignItems: 'center', marginTop: 4 },
   customBtnText: { color: COLORS.ink, fontSize: 14, fontWeight: '600' },

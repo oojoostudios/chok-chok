@@ -1,14 +1,15 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View, Text, Pressable, ScrollView, TextInput, StyleSheet, SafeAreaView,
   KeyboardAvoidingView, Platform, Keyboard,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { COLORS, ROLE } from '../theme';
 import type { Frequency, Product, Role } from '../types';
 import Silhouette from '../components/Silhouette';
-import { FAMILIES, DEFAULT_ICON, type Family, type IconId } from '../data/containerIcons';
-import { upsertProduct } from '../productStore';
+import { FAMILIES, DEFAULT_ICON, familyOf, type Family, type IconId } from '../data/containerIcons';
+import { iconFor } from '../data/formDefaults';
+import { loadProducts, upsertProduct } from '../productStore';
 
 const ROLES = Object.keys(ROLE) as Role[];
 
@@ -33,6 +34,12 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 export default function AddProductScreen() {
   const router = useRouter();
+  // An `id` param turns this screen into an editor for that existing product.
+  const { id } = useLocalSearchParams<{ id?: string }>();
+  const editing = Boolean(id);
+
+  const [existing, setExisting] = useState<Product | null>(null);
+  const [hydrated, setHydrated] = useState(!id);
   const [brand, setBrand] = useState('');
   const [name, setName] = useState('');
   const [role, setRole] = useState<Role | undefined>();
@@ -40,6 +47,28 @@ export default function AddProductScreen() {
   const [icon, setIcon] = useState<IconId | undefined>();
   const [timing, setTiming] = useState<Frequency | undefined>();
   const [notes, setNotes] = useState('');
+
+  useEffect(() => {
+    if (!id) return;
+    let cancelled = false;
+    loadProducts().then((all) => {
+      if (cancelled) return;
+      const found = all.find((p) => p.id === id);
+      if (found) {
+        const existingIcon = iconFor(found);
+        setExisting(found);
+        setBrand(found.brand);
+        setName(found.name);
+        setRole(found.role);
+        setIcon(existingIcon);
+        setFamily(familyOf(existingIcon));
+        setTiming(found.timing ?? found.frequency);
+        setNotes(found.notes ?? '');
+      }
+      setHydrated(true);
+    });
+    return () => { cancelled = true; };
+  }, [id]);
 
   // Container tiles take the chosen role's tint; neutral until a role is picked.
   const tint = role ? ROLE[role].tint : '#C3B7AE';
@@ -51,15 +80,22 @@ export default function AddProductScreen() {
     setFamily(f);
     setIcon(DEFAULT_ICON[f]);
   };
-  const canSave = Boolean(brand.trim() && name.trim() && role && icon && timing);
+  // Role is a beauty-only requirement; a wellness product edited here keeps its category.
+  const type = existing?.type ?? 'beauty';
+  const canSave = Boolean(
+    brand.trim() && name.trim() && icon && timing && (type === 'beauty' ? role : true)
+  );
 
   const onSave = async () => {
     if (!canSave) return;
     const product: Product = {
-      id: String(Date.now()),
+      // Spread first so fields this form doesn't cover (category, dosage,
+      // buyUrl, concerns…) survive an edit instead of being wiped.
+      ...existing,
+      id: existing?.id ?? String(Date.now()),
       brand: brand.trim(),
       name: name.trim(),
-      type: 'beauty',
+      type,
       role,
       icon,
       timing: timing!,
@@ -69,15 +105,26 @@ export default function AddProductScreen() {
     router.back();
   };
 
-  return (
-    <SafeAreaView style={styles.screen}>
-      <View style={styles.topbar}>
-        <Pressable onPress={() => router.back()} style={styles.back}><Text style={styles.backX}>‹</Text></Pressable>
-        <Text style={styles.title}>Add product</Text>
+  const topbar = (
+    <View style={styles.topbar}>
+      <Pressable onPress={() => router.back()} style={styles.back}><Text style={styles.backX}>‹</Text></Pressable>
+      <Text style={styles.title}>{editing ? 'Edit product' : 'Add product'}</Text>
+      {hydrated ? (
         <Pressable onPress={onSave} hitSlop={10} disabled={!canSave}>
           <Text style={[styles.save, !canSave && styles.saveDisabled]}>Save</Text>
         </Pressable>
-      </View>
+      ) : (
+        <View style={{ width: 30 }} />
+      )}
+    </View>
+  );
+
+  // Hold the form back until the product is read, so fields don't flash empty.
+  if (!hydrated) return <SafeAreaView style={styles.screen}>{topbar}</SafeAreaView>;
+
+  return (
+    <SafeAreaView style={styles.screen}>
+      {topbar}
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView
