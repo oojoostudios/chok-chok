@@ -15,9 +15,14 @@ const FIGURE = ROLE.Seal.tintStrong;
 const BODY_INK = ROLE.Seal.ink;
 
 const HEADLINE = 'Shelf care, shared';
+// The \u00A0 binds the last two words so the line can never break to a single
+// orphaned "you." — belt and braces alongside the wider measure below.
 const BODY =
-  'Build your shelf. Group products into routines. Send one as a card — and keep the ones friends send you.';
+  'Build your shelf. Group products into routines. Send one as a card — and keep the ones friends send\u00A0you.';
 const CTA = 'Start your shelf';
+
+const BODY_SIZE = 13;
+const BODY_LEADING = 1.6;
 
 export default function IntroScreen() {
   const insets = useSafeAreaInsets();
@@ -44,13 +49,17 @@ export default function IntroScreen() {
     >
       <StatusBar style="dark" />
 
-      {/* A colour field, not an illustration. pointerEvents lets taps through
-          to the button beneath it. */}
+      {/* One dropper bottle, sized so the whole shape reads rather than a
+          cropped fragment. The icon occupies only the middle third of its
+          110-wide viewBox, so a 1.2x box puts the bottle itself at ~0.4x
+          screen width, sitting in the upper right with a sliver bleeding off
+          the edge. `solid` collapses the interior contours, so this renders as
+          a single filled shape. pointerEvents lets taps through to the CTA. */}
       <View
         pointerEvents="none"
-        style={[styles.figure, { top: -width * 1.25, right: -width * 1.56 }]}
+        style={[styles.figure, { top: -width * 0.15, right: -width * 0.45 }]}
       >
-        <Silhouette icon="dropper-1" color={FIGURE} size={width * 3.3} opacity={0.1} solid />
+        <Silhouette icon="dropper-1" color={FIGURE} size={width * 1.2} opacity={0.1} solid />
       </View>
 
       <Text style={styles.wordmark}>DODAM</Text>
@@ -101,9 +110,10 @@ const styles = StyleSheet.create({
   },
   body: {
     marginTop: 16,
-    maxWidth: 260,
-    fontSize: 13,
-    lineHeight: 21,
+    // Was capped at 260, which wrapped the last word onto its own line. No cap
+    // now: the block runs the full measure between the screen's 26pt gutters.
+    fontSize: BODY_SIZE,
+    lineHeight: BODY_SIZE * BODY_LEADING,
     color: BODY_INK,
   },
   button: {

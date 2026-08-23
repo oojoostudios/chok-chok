@@ -99,7 +99,10 @@ export default function ProductRing({ products, onSelect, onAdd }:{
         ))}
       </Animated.ScrollView>
 
-      <Text style={styles.hint}>swipe · tap a product for details</Text>
+      {/* Nothing to swipe to or tap when the only card is Add product. */}
+      {products.length > 0 && (
+        <Text style={styles.hint}>swipe · tap a product for details</Text>
+      )}
     </View>
   );
 }

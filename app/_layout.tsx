@@ -19,6 +19,15 @@ export default function Layout() {
 
   const ready = (fontsLoaded || !!fontError) && hasSeenIntro !== null;
 
+  // A font failure is not worth blocking launch over, but it is worth knowing
+  // about: without this the intro headline silently falls back to the system
+  // serif and nothing says why.
+  useEffect(() => {
+    if (__DEV__ && fontError) {
+      console.warn('DMSerifDisplay_400Regular failed to load; text will fall back.', fontError);
+    }
+  }, [fontError]);
+
   useEffect(() => {
     if (!ready) return;
     if (hasSeenIntro) {
