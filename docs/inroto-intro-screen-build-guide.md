@@ -1,8 +1,8 @@
-# Dodam — First-Run Intro Screen
+# Inroto — First-Run Intro Screen
 
 ## Goal
 
-Add a single intro screen that shows once, on first launch only, explaining what Dodam is and sending the user into their empty cabinet. After the user taps through, it never appears again.
+Add a single intro screen that shows once, on first launch only, explaining what Inroto is and sending the user into their empty cabinet. After the user taps through, it never appears again.
 
 ## Scope
 
@@ -53,7 +53,7 @@ The CTA writes `@chokchok:hasSeenIntro = 'true'` and navigates with `router.repl
 
 Exact copy. Do not paraphrase or reflow.
 
-**Wordmark:** `DODAM`
+**Wordmark:** `INROTO`
 
 **Headline:**
 ```
@@ -82,7 +82,7 @@ Single full-height screen, no scroll. Content is bottom-weighted so the button s
 ```
 ┌─────────────────────┐
 │                     │  safe-area top + 24
-│  DODAM              │  wordmark, 10pt, wide tracking
+│  INROTO             │  wordmark, 10pt, wide tracking
 │                     │
 │                     │
 │      (silhouette    │  oversized, low opacity,

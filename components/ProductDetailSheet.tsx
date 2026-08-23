@@ -38,7 +38,7 @@ export default function ProductDetailSheet({ product, visible, onClose, onChange
   };
   const onShare = () => {
     const line = p.buyUrl ? `${p.name} — ${p.buyUrl}` : p.name;
-    Share.share({ message: `A pick from my Dodam cabinet:\n${line}` });
+    Share.share({ message: `A pick from my Inroto cabinet:\n${line}` });
   };
 
   const confirmDelete = () => {

@@ -67,7 +67,7 @@ export default function IntroScreen() {
         <Silhouette icon="dropper-1" color={FIGURE} size={width * 1.2} solid />
       </View>
 
-      <Text style={styles.wordmark}>DODAM</Text>
+      <Text style={styles.wordmark}>INROTO</Text>
 
       <View style={styles.spacer} />
 

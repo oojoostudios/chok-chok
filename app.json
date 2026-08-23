@@ -1,19 +1,19 @@
 {
   "expo": {
-    "name": "Dodam",
-    "slug": "dodam",
+    "name": "Inroto",
+    "slug": "inroto",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "dodam",
+    "scheme": "inroto",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.oojoostudios.dodam"
+      "bundleIdentifier": "com.oojoostudios.inroto"
     },
     "android": {
-      "package": "com.oojoostudios.dodam",
+      "package": "com.oojoostudios.inroto",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",

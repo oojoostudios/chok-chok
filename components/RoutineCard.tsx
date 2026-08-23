@@ -61,7 +61,7 @@ export default function RoutineCard({
         );
       })}
 
-      <Text style={styles.wordmark}>Dodam</Text>
+      <Text style={styles.wordmark}>Inroto</Text>
       {hasWellness && (
         <Text style={styles.disclaimer}>
           Not medical advice. Talk to your doctor or pharmacist before starting a supplement.

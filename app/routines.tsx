@@ -84,7 +84,7 @@ export default function RoutinesScreen() {
       await Sharing.shareAsync(uri, {
         mimeType: 'image/png',
         UTI: 'public.png',
-        dialogTitle: `${draft?.name ?? 'Routine'} · Dodam`,
+        dialogTitle: `${draft?.name ?? 'Routine'} · Inroto`,
       });
     } catch {
       Alert.alert('Couldn’t share', 'Something went wrong making the image. Try again.');

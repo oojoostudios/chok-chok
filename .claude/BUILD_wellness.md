@@ -1,4 +1,4 @@
-# Dodam — Build: Wellness cabinet (goal taxonomy, parallel to beauty roles)
+# Inroto — Build: Wellness cabinet (goal taxonomy, parallel to beauty roles)
 
 Brings wellness up to parity with beauty. Wellness products organize by GOAL
 (not role), reuse the same container icons + add form + store, add an optional

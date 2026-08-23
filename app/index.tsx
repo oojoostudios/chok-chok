@@ -38,7 +38,7 @@ export default function CabinetScreen() {
   // ─────────────────────────────────────────────────────────────────────────
   // DEV ONLY — REMOVE BEFORE SHIPPING
   // Scaffolding for re-testing the first-run intro, reached by long-pressing
-  // the Dodam wordmark. Delete this handler, the onLongPress on the wordmark
+  // the Inroto wordmark. Delete this handler, the onLongPress on the wordmark
   // below, and the `resetIntroForTesting` / `DevSettings` imports together.
   // ─────────────────────────────────────────────────────────────────────────
   const devResetIntro = async () => {
@@ -63,7 +63,7 @@ export default function CabinetScreen() {
             devResetIntro above). __DEV__ is false in release builds, so
             onLongPress is undefined there and the wordmark is inert. */}
         <Text style={styles.brand} onLongPress={__DEV__ ? devResetIntro : undefined}>
-          Dodam
+          Inroto
         </Text>
         <Text style={styles.tagline}>routines worth sharing</Text>
       </View>

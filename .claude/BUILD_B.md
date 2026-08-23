@@ -1,4 +1,4 @@
-# Dodam — Build B: Routine view + Share image + Edit/Delete + Buy-search
+# Inroto — Build B: Routine view + Share image + Edit/Delete + Buy-search
 
 Four things. The routine card renderer is the big one. Depends on: role
 taxonomy, container icons, and products store (Build A) all being in place.
@@ -75,7 +75,7 @@ Render (note forShare so it uses the fixed capture width):
 </Pressable>
 ```
 The captured image is the RoutineCard exactly as shown — steps, silhouettes,
-names, brands, timing, the Dodam wordmark, and (if any wellness step) the
+names, brands, timing, the Inroto wordmark, and (if any wellness step) the
 disclaimer. Wellness dosage is intentionally NOT rendered on the card.
 
 ## PART 3 — Edit + Delete on a product
