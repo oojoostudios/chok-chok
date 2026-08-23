@@ -212,8 +212,11 @@ export default function AddProductScreen() {
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
         >
-        {/* Tapping any dead space between fields closes the keyboard. */}
-        <Pressable onPress={Keyboard.dismiss} accessible={false}>
+        {/* Tapping any dead space between fields closes the keyboard. On web
+            there is no keyboard to close, and react-native-web fires this
+            ancestor's onPress from the child input's own click — which would
+            blur the field the moment it is focused. */}
+        <Pressable onPress={Platform.OS === 'web' ? undefined : Keyboard.dismiss} accessible={false}>
           <Field label="TYPE">
             <View style={styles.pillWrap}>
               {TYPES.map((t) => {
