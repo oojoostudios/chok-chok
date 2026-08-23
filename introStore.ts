@@ -18,7 +18,8 @@ export async function markIntroSeen(): Promise<void> {
 }
 
 // Dev-only: clears the flag so the next launch replays the first-run path.
-// Not wired to any UI — call it from a debugger or a temporary effect.
+// Called from the __DEV__-gated reset control in app/index.tsx, which is
+// marked REMOVE BEFORE SHIPPING. This helper itself is harmless to keep.
 export async function resetIntroForTesting(): Promise<void> {
   try {
     await AsyncStorage.removeItem(HAS_SEEN_INTRO_KEY);

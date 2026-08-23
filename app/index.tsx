@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, Pressable } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, Pressable, DevSettings } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import ProductRing from '../components/ProductRing';
 import ProductDetailSheet from '../components/ProductDetailSheet';
 import { loadProducts, upsertProduct } from '../productStore';
+import { resetIntroForTesting } from '../introStore'; // DEV ONLY — see below
 import { COLORS } from '../theme';
 import type { Product } from '../types';
 import type { IconId } from '../data/containerIcons';
@@ -32,6 +33,21 @@ export default function CabinetScreen() {
     setAll((prev) => prev.map((p) => (p.id === productId ? updated : p)));
     setSelected((prev) => (prev && prev.id === productId ? updated : prev));
     await upsertProduct(updated);
+  };
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // DEV ONLY — REMOVE BEFORE SHIPPING
+  // Scaffolding for re-testing the first-run intro. Delete this handler, the
+  // block that renders it below, the two `devReset*` styles, and the
+  // `resetIntroForTesting` / `DevSettings` imports together.
+  // ─────────────────────────────────────────────────────────────────────────
+  const devResetIntro = async () => {
+    await resetIntroForTesting();
+    // Reloading re-runs the gate in app/_layout.tsx from scratch. The native
+    // splash only reappears on a true cold launch, so to exercise the
+    // splash-ordering part, kill and reopen the app instead of tapping this.
+    if (typeof DevSettings?.reload === 'function') DevSettings.reload();
+    else router.replace('/intro');
   };
 
   const tabs: { key: Filter; label: string }[] = [
@@ -72,6 +88,18 @@ export default function CabinetScreen() {
         />
       </View>
 
+      {/* ───────────────────────────────────────────────────────────────────
+          DEV ONLY — REMOVE BEFORE SHIPPING
+          __DEV__ is false in release builds, so this is stripped from the
+          production bundle and never ships. Kept deliberately ugly so it is
+          hard to miss. See devResetIntro() above.
+          ─────────────────────────────────────────────────────────────────── */}
+      {__DEV__ && (
+        <Pressable style={styles.devResetBtn} onPress={devResetIntro}>
+          <Text style={styles.devResetText}>DEV ONLY · reset intro + reload</Text>
+        </Pressable>
+      )}
+
       <Pressable style={styles.routinesBtn} onPress={() => router.push('/routines')}>
         <Text style={styles.routinesText}>Routines ›</Text>
       </Pressable>
@@ -102,4 +130,8 @@ const styles = StyleSheet.create({
 
   routinesBtn: { alignSelf: 'center', marginBottom: 18, backgroundColor: COLORS.ink, borderRadius: 20, paddingHorizontal: 22, paddingVertical: 10 },
   routinesText: { color: '#F6EFEA', fontSize: 14, fontWeight: '600' },
+
+  // DEV ONLY — REMOVE BEFORE SHIPPING (see the block in the tree above)
+  devResetBtn: { alignSelf: 'center', marginBottom: 8, backgroundColor: '#B3261E', borderRadius: 4, paddingHorizontal: 12, paddingVertical: 6 },
+  devResetText: { color: '#FFFFFF', fontSize: 11, fontWeight: '700', letterSpacing: 0.4 },
 });
