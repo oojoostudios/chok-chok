@@ -65,7 +65,6 @@ export default function CabinetScreen() {
         <Text style={styles.brand} onLongPress={__DEV__ ? devResetIntro : undefined}>
           Inroto
         </Text>
-        <Text style={styles.tagline}>routines worth sharing</Text>
       </View>
 
       <View style={styles.segment}>
@@ -113,7 +112,6 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: COLORS.bg },
   brandRow: { alignItems: 'center', paddingTop: 8, paddingBottom: 8 },
   brand: { fontSize: 24, color: COLORS.ink, fontWeight: '600' },
-  tagline: { fontSize: 12, color: COLORS.sub, letterSpacing: 1, textTransform: 'uppercase', marginTop: 2 },
 
   segment: { flexDirection: 'row', alignSelf: 'center', backgroundColor: '#E4DAD2', borderRadius: 20, padding: 3, marginBottom: 4 },
   segItem: { paddingHorizontal: 18, paddingVertical: 7, borderRadius: 18 },

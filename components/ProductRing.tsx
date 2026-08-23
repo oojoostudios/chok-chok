@@ -74,7 +74,13 @@ export default function ProductRing({ products, onSelect, onAdd }:{
   return (
     <View>
       <View style={styles.header}>
-        <Text style={styles.catLabel}>{onAddCard ? 'Add product' : styleFor(current.product).label}</Text>
+        {/* On the Add card this label would only repeat the card's own
+            "Add product", so it is dropped there and the count line carries the
+            header alone. The header keeps its full height either way, so the
+            ring does not shift as the label comes and goes mid-swipe. */}
+        {!onAddCard && (
+          <Text style={styles.catLabel}>{styleFor(current.product).label}</Text>
+        )}
         <Text style={styles.counter}>
           {onAddCard
             ? (products.length === 0 ? 'Cabinet is empty' : `${products.length} in cabinet`)
@@ -124,8 +130,12 @@ export default function ProductRing({ products, onSelect, onAdd }:{
 }
 
 const styles = StyleSheet.create({
-  header: { alignItems: 'center', marginBottom: 6 },
-  catLabel: { fontSize: 20, color: COLORS.ink, fontWeight: '500' },
-  counter: { fontSize: 12, color: COLORS.sub, marginTop: 2 },
+  // minHeight reserves the space the category label occupies (24 + 2 + 16), and
+  // flex-end pins the count line to the bottom of it, so the count sits at the
+  // same y whether or not the label above it is rendered. Both line heights are
+  // explicit to keep that sum exact across platforms.
+  header: { alignItems: 'center', justifyContent: 'flex-end', minHeight: 42, marginBottom: 6 },
+  catLabel: { fontSize: 20, lineHeight: 24, color: COLORS.ink, fontWeight: '500' },
+  counter: { fontSize: 12, lineHeight: 16, color: COLORS.sub, marginTop: 2 },
   hint: { textAlign: 'center', fontSize: 12, color: COLORS.sub, marginTop: 8 },
 });
