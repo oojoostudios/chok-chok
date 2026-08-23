@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable, Dimensions, StyleSheet } from 'react-native';
+import { View, Text, Pressable, useWindowDimensions, StyleSheet } from 'react-native';
 import Animated, {
   useSharedValue, useAnimatedScrollHandler, useAnimatedStyle,
   interpolate, Extrapolation, SharedValue,
@@ -14,11 +14,15 @@ const ADD_ID = '__add__';
 type Entry = { id: typeof ADD_ID } | { id: string; product: Product };
 const isAdd = (e: Entry): e is { id: typeof ADD_ID } => e.id === ADD_ID;
 
-const { width: SCREEN_W } = Dimensions.get('window');
 const CARD_W = 176;
 const CARD_H = 232;
 const ITEM_W = CARD_W + 18;              // snap interval
-const SIDE = (SCREEN_W - ITEM_W) / 2;    // centers first & last card
+
+// Padding that lets the first and last card reach dead center. It has to be a
+// real number — a center-snapping carousel can't get this from flex alone — so
+// it's derived from the live viewport width at render, never captured once.
+// Clamped at 0: below ITEM_W the raw formula goes negative and clips the strip.
+const sidePadding = (viewportW: number) => Math.max(0, (viewportW - ITEM_W) / 2);
 
 function RingItem({ entry, index, scrollX, onPress }:{
   entry: Entry; index: number; scrollX: SharedValue<number>; onPress: () => void;
@@ -55,6 +59,9 @@ export default function ProductRing({ products, onSelect, onAdd }:{
 }) {
   const scrollX = useSharedValue(0);
   const [active, setActive] = useState(0);
+  // Re-renders on browser resize / device rotation, so the ring re-centers
+  // instead of holding the width it happened to launch at.
+  const { width: viewportW } = useWindowDimensions();
 
   const onScroll = useAnimatedScrollHandler({
     onScroll: (e) => { scrollX.value = e.contentOffset.x; },
@@ -86,7 +93,16 @@ export default function ProductRing({ products, onSelect, onAdd }:{
           const i = Math.round(e.nativeEvent.contentOffset.x / ITEM_W);
           setActive(Math.max(0, Math.min(entries.length - 1, i)));
         }}
-        contentContainerStyle={{ paddingHorizontal: SIDE, alignItems: 'center', height: CARD_H + 40 }}
+        contentContainerStyle={{
+          // flexGrow + justifyContent center the strip whenever it is narrower
+          // than the viewport — the empty-cabinet case, where the Add card is
+          // the only card. Cards keep their width (flexShrink defaults to 0).
+          flexGrow: 1,
+          justifyContent: 'center',
+          paddingHorizontal: sidePadding(viewportW),
+          alignItems: 'center',
+          height: CARD_H + 40,
+        }}
       >
         {entries.map((entry, i) => (
           <RingItem
