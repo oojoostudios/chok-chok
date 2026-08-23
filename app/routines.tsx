@@ -13,6 +13,7 @@ import {
 } from '../data/presetProtocols';
 import { loadProducts } from '../productStore';
 import { loadRoutines, upsertRoutine, deleteRoutine } from '../storage';
+import { routineLimitFor } from '../config/limits';
 import RoutineCard from '../components/RoutineCard';
 import Silhouette from '../components/Silhouette';
 import { iconFor } from '../data/formDefaults';
@@ -46,10 +47,24 @@ export default function RoutinesScreen() {
     React.useCallback(() => { loadProducts().then(setProducts); }, [])
   );
 
-  const openPreset = (p: Preset) => { setFromView(false); setDraft(routineFromPreset(p)); setMode('builder'); };
-  const openCustom = () => { setFromView(false); setDraft(blankCustomRoutine()); setMode('builder'); };
-  const openWellnessPreset = (p: WellnessPreset) => { setFromView(false); setDraft(routineFromWellnessPreset(p)); setMode('builder'); };
-  const openWellnessCustom = () => { setFromView(false); setDraft(blankWellnessRoutine()); setMode('builder'); };
+  // Checked when a NEW routine is started, so the user is stopped before doing
+  // the work rather than after filling one out. Editing an existing routine is
+  // never blocked.
+  const canCreateRoutine = (which: Cabinet) => {
+    const limit = routineLimitFor(which);
+    const count = saved.filter((r) => isWellnessRoutine(r) === (which === 'wellness')).length;
+    if (count < limit) return true;
+    Alert.alert(
+      'Routine limit reached',
+      `You can keep up to ${limit} ${which} ${limit === 1 ? 'routine' : 'routines'}. Delete one to make room.`
+    );
+    return false;
+  };
+
+  const openPreset = (p: Preset) => { if (!canCreateRoutine('beauty')) return; setFromView(false); setDraft(routineFromPreset(p)); setMode('builder'); };
+  const openCustom = () => { if (!canCreateRoutine('beauty')) return; setFromView(false); setDraft(blankCustomRoutine()); setMode('builder'); };
+  const openWellnessPreset = (p: WellnessPreset) => { if (!canCreateRoutine('wellness')) return; setFromView(false); setDraft(routineFromWellnessPreset(p)); setMode('builder'); };
+  const openWellnessCustom = () => { if (!canCreateRoutine('wellness')) return; setFromView(false); setDraft(blankWellnessRoutine()); setMode('builder'); };
   // Saved routines open on the finished card; Edit from there enters the builder.
   const openSaved = (r: Routine) => { setFromView(false); setDraft({ ...r, steps: r.steps.map((s) => ({ ...s })) }); setMode('view'); };
 
