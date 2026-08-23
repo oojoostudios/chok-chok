@@ -5,18 +5,29 @@ import {
 import { useRouter, useFocusEffect } from 'expo-router';
 import ViewShot from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
-import { COLORS, styleFor } from '../theme';
+import { COLORS, GOAL, styleFor } from '../theme';
 import type { Product, Routine } from '../types';
-import { PRESETS, routineFromPreset, blankCustomRoutine, type Preset } from '../data/presetProtocols';
+import {
+  PRESETS, routineFromPreset, blankCustomRoutine, type Preset,
+  WELLNESS_PRESETS, routineFromWellnessPreset, blankWellnessRoutine, type WellnessPreset,
+} from '../data/presetProtocols';
 import { loadProducts } from '../productStore';
 import { loadRoutines, upsertRoutine, deleteRoutine } from '../storage';
 import RoutineCard from '../components/RoutineCard';
 import Silhouette from '../components/Silhouette';
 import { iconFor } from '../data/formDefaults';
 
+type Cabinet = 'beauty' | 'wellness';
+
+// Sentinel for the picker: not a step index, but "append a new supplement".
+const APPEND_STEP = -1;
+
+const isWellnessRoutine = (r: Routine) => r.kind === 'wellness';
+
 export default function RoutinesScreen() {
   const router = useRouter();
   const [mode, setMode] = useState<'list' | 'view' | 'builder'>('list');
+  const [cabinet, setCabinet] = useState<Cabinet>('beauty');
   const [draft, setDraft] = useState<Routine | null>(null);
   const [saved, setSaved] = useState<Routine[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -37,6 +48,8 @@ export default function RoutinesScreen() {
 
   const openPreset = (p: Preset) => { setFromView(false); setDraft(routineFromPreset(p)); setMode('builder'); };
   const openCustom = () => { setFromView(false); setDraft(blankCustomRoutine()); setMode('builder'); };
+  const openWellnessPreset = (p: WellnessPreset) => { setFromView(false); setDraft(routineFromWellnessPreset(p)); setMode('builder'); };
+  const openWellnessCustom = () => { setFromView(false); setDraft(blankWellnessRoutine()); setMode('builder'); };
   // Saved routines open on the finished card; Edit from there enters the builder.
   const openSaved = (r: Routine) => { setFromView(false); setDraft({ ...r, steps: r.steps.map((s) => ({ ...s })) }); setMode('view'); };
 
@@ -67,7 +80,11 @@ export default function RoutinesScreen() {
 
   const setStepProduct = (i: number, productId: string) => {
     if (!draft) return;
-    setDraft({ ...draft, steps: draft.steps.map((s, k) => (k === i ? { ...s, productId } : s)) });
+    // Wellness rows grow: the picker appends a step rather than filling a slot.
+    const steps = i === APPEND_STEP
+      ? [...draft.steps, { productId }]
+      : draft.steps.map((s, k) => (k === i ? { ...s, productId } : s));
+    setDraft({ ...draft, steps });
     setPickerStep(null);
   };
   const clearStepProduct = (i: number) => {
@@ -113,6 +130,13 @@ export default function RoutinesScreen() {
 
   // -------- LIST --------
   if (mode === 'list') {
+    const wellness = cabinet === 'wellness';
+    const mine = saved.filter((r) => isWellnessRoutine(r) === wellness);
+    const tabs: { key: Cabinet; label: string }[] = [
+      { key: 'beauty', label: 'Beauty' },
+      { key: 'wellness', label: 'Wellness' },
+    ];
+
     return (
       <SafeAreaView style={styles.screen}>
         <View style={styles.topbar}>
@@ -121,32 +145,74 @@ export default function RoutinesScreen() {
           <View style={{ width: 30 }} />
         </View>
 
+        <View style={styles.segment}>
+          {tabs.map((t) => {
+            const active = cabinet === t.key;
+            return (
+              <Pressable key={t.key} onPress={() => setCabinet(t.key)} style={[styles.segItem, active && styles.segItemActive]}>
+                <Text style={[styles.segText, active && styles.segTextActive]}>{t.label}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+
         <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: 40 }}>
-          <Text style={styles.section}>Preset Routine Protocols</Text>
-          {PRESETS.map((p) => (
-            <Pressable key={p.name} style={styles.row} onPress={() => openPreset(p)}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.rowName}>{p.name}</Text>
-                <Text style={styles.rowSub}>{p.stepLabels.join(' · ')}</Text>
-              </View>
-              <Text style={styles.chev}>›</Text>
-            </Pressable>
-          ))}
-
-          <Pressable style={styles.customBtn} onPress={openCustom}>
-            <Text style={styles.customBtnText}>+ Create custom protocol</Text>
-          </Pressable>
-
-          {saved.length > 0 && (
+          {wellness ? (
             <>
-              <Text style={[styles.section, { marginTop: 26 }]}>My Protocols</Text>
-              {saved.map((r) => {
+              <Text style={styles.section}>Preset Wellness Routines</Text>
+              {WELLNESS_PRESETS.map((p) => {
+                const g = GOAL[p.name];
+                return (
+                  <Pressable key={p.id} style={styles.row} onPress={() => openWellnessPreset(p)}>
+                    <View style={[styles.goalDot, { backgroundColor: g.tint }]} />
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.rowName}>{p.name}</Text>
+                      <Text style={styles.rowSub}>Build a stack for this goal</Text>
+                    </View>
+                    <Text style={styles.chev}>›</Text>
+                  </Pressable>
+                );
+              })}
+
+              <Pressable style={styles.customBtn} onPress={openWellnessCustom}>
+                <Text style={styles.customBtnText}>+ Create custom routine</Text>
+              </Pressable>
+            </>
+          ) : (
+            <>
+              <Text style={styles.section}>Preset Routine Protocols</Text>
+              {PRESETS.map((p) => (
+                <Pressable key={p.name} style={styles.row} onPress={() => openPreset(p)}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.rowName}>{p.name}</Text>
+                    <Text style={styles.rowSub}>{p.stepLabels.join(' · ')}</Text>
+                  </View>
+                  <Text style={styles.chev}>›</Text>
+                </Pressable>
+              ))}
+
+              <Pressable style={styles.customBtn} onPress={openCustom}>
+                <Text style={styles.customBtnText}>+ Create custom protocol</Text>
+              </Pressable>
+            </>
+          )}
+
+          {mine.length > 0 && (
+            <>
+              <Text style={[styles.section, { marginTop: 26 }]}>
+                {wellness ? 'My Routines' : 'My Protocols'}
+              </Text>
+              {mine.map((r) => {
                 const filled = r.steps.filter((s) => s.productId).length;
                 return (
                   <Pressable key={r.id} style={styles.row} onPress={() => openSaved(r)}>
                     <View style={{ flex: 1 }}>
                       <Text style={styles.rowName}>{r.name}</Text>
-                      <Text style={styles.rowSub}>{filled}/{r.steps.length} steps filled</Text>
+                      <Text style={styles.rowSub}>
+                        {isWellnessRoutine(r)
+                          ? `${filled} ${filled === 1 ? 'supplement' : 'supplements'}`
+                          : `${filled}/${r.steps.length} steps filled`}
+                      </Text>
                     </View>
                     <Pressable onPress={() => remove(r.id)} hitSlop={10}><Text style={styles.del}>Delete</Text></Pressable>
                   </Pressable>
@@ -197,7 +263,11 @@ export default function RoutinesScreen() {
 
   // -------- BUILDER --------
   const d = draft!;
+  const isWellness = isWellnessRoutine(d);
   const isCustom = d.kind === 'custom';
+  // A routine only offers products from its own cabinet.
+  const pickable = products.filter((p) => (isWellness ? p.type === 'wellness' : p.type === 'beauty'));
+
   return (
     <SafeAreaView style={styles.screen}>
       <View style={styles.topbar}>
@@ -207,17 +277,55 @@ export default function RoutinesScreen() {
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: 40 }}>
-        {isCustom && (
+        {/* Wellness routines are named after a goal, but the name stays editable. */}
+        {(isCustom || isWellness) && (
           <TextInput
             value={d.name}
             onChangeText={(t) => setDraft({ ...d, name: t })}
-            placeholder="Protocol name"
+            placeholder={isWellness ? 'Routine name' : 'Protocol name'}
             placeholderTextColor={COLORS.sub}
             style={styles.nameInput}
           />
         )}
 
-        {d.steps.map((step, i) => {
+        {/* Wellness: a growable list of supplements, no role labels, no slots. */}
+        {isWellness ? (
+          <>
+            {d.steps.map((step, i) => {
+              const product = productById(step.productId);
+              const cat = product ? styleFor(product) : null;
+              return (
+                <View key={i} style={styles.suppRow}>
+                  {product && cat ? (
+                    <>
+                      <View style={[styles.suppThumb, { backgroundColor: cat.bg }]}>
+                        <Silhouette icon={iconFor(product)} color={cat.tint} size={26} />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.suppName} numberOfLines={1}>{product.name}</Text>
+                        <Text style={styles.suppMeta} numberOfLines={1}>
+                          {[product.brand, cat.label].filter(Boolean).join(' · ')}
+                        </Text>
+                      </View>
+                    </>
+                  ) : (
+                    // The supplement was deleted from the cabinet; the row still
+                    // has to be removable.
+                    <Text style={[styles.suppMeta, { flex: 1 }]}>No longer in your cabinet</Text>
+                  )}
+                  <Pressable onPress={() => removeStep(i)} hitSlop={10}>
+                    <Text style={styles.chipClear}>✕</Text>
+                  </Pressable>
+                </View>
+              );
+            })}
+
+            <Pressable style={styles.addSlot} onPress={() => setPickerStep(APPEND_STEP)}>
+              <Text style={styles.addSlotText}>+ Add supplement</Text>
+            </Pressable>
+          </>
+        ) : (
+        d.steps.map((step, i) => {
           const product = productById(step.productId);
           const cat = product ? styleFor(product) : null;
           return (
@@ -251,7 +359,8 @@ export default function RoutinesScreen() {
               )}
             </View>
           );
-        })}
+        })
+        )}
 
         {isCustom && (
           <Pressable style={styles.addStep} onPress={addStep}>
@@ -264,12 +373,16 @@ export default function RoutinesScreen() {
         <Pressable style={styles.backdrop} onPress={() => setPickerStep(null)} />
         <View style={styles.picker}>
           <View style={styles.handle} />
-          <Text style={styles.pickerTitle}>Choose a product</Text>
+          <Text style={styles.pickerTitle}>{isWellness ? 'Choose a supplement' : 'Choose a product'}</Text>
           <ScrollView style={{ maxHeight: 360 }}>
-            {products.length === 0 ? (
-              <Text style={styles.pickEmpty}>No products yet. Add one to your cabinet first.</Text>
+            {pickable.length === 0 ? (
+              <Text style={styles.pickEmpty}>
+                {isWellness
+                  ? 'No supplements yet. Add one to your cabinet first.'
+                  : 'No products yet. Add one to your cabinet first.'}
+              </Text>
             ) : null}
-            {products.map((p) => {
+            {pickable.map((p) => {
               const cat = styleFor(p);
               return (
                 <Pressable key={p.id} style={styles.pickRow} onPress={() => pickerStep !== null && setStepProduct(pickerStep, p.id)}>
@@ -298,7 +411,15 @@ const styles = StyleSheet.create({
   title: { fontSize: 18, color: COLORS.ink, fontWeight: '600', flex: 1, textAlign: 'center' },
   save: { fontSize: 15, color: COLORS.ink, fontWeight: '600' },
 
+  // Mirrors the cabinet's All/Beauty/Wellness control.
+  segment: { flexDirection: 'row', alignSelf: 'center', backgroundColor: '#E4DAD2', borderRadius: 20, padding: 3, marginTop: 4, marginBottom: 4 },
+  segItem: { paddingHorizontal: 18, paddingVertical: 7, borderRadius: 18 },
+  segItemActive: { backgroundColor: COLORS.card },
+  segText: { fontSize: 13, color: COLORS.sub, fontWeight: '500' },
+  segTextActive: { color: COLORS.ink },
+
   section: { fontSize: 12, letterSpacing: 0.8, textTransform: 'uppercase', color: COLORS.sub, marginBottom: 10 },
+  goalDot: { width: 10, height: 10, borderRadius: 5, marginRight: 12 },
   row: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.card, borderRadius: 14, padding: 14, marginBottom: 10 },
   rowName: { fontSize: 15, color: COLORS.ink, fontWeight: '600' },
   rowSub: { fontSize: 12, color: COLORS.sub, marginTop: 3 },
@@ -326,6 +447,12 @@ const styles = StyleSheet.create({
   chip: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 12, padding: 8 },
   chipName: { fontSize: 13, fontWeight: '600', flex: 1 },
   chipClear: { fontSize: 12, color: '#7C6F68' },
+
+  // Wellness builder rows: no step number, no role label — just the supplement.
+  suppRow: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: COLORS.card, borderRadius: 14, padding: 10, marginBottom: 10 },
+  suppThumb: { width: 40, height: 40, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
+  suppName: { fontSize: 14, color: COLORS.ink, fontWeight: '600' },
+  suppMeta: { fontSize: 12, color: COLORS.sub, marginTop: 2 },
 
   addSlot: { borderWidth: 1, borderColor: '#C3B7AE', borderStyle: 'dashed', borderRadius: 12, paddingVertical: 10, alignItems: 'center' },
   addSlotText: { color: COLORS.sub, fontSize: 13 },

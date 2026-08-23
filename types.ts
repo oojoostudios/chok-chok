@@ -45,12 +45,18 @@ export type Product = {
   priceNote?: string;
 };
 
-export type RoutineStep = { label: string; productId?: string };
+// Beauty steps carry a role label ("Cleanse"); a wellness step is just a
+// supplement, so the label is optional.
+export type RoutineStep = { label?: string; productId?: string };
 
 export type Routine = {
   id: string;
   name: string;
-  kind: 'AM' | 'PM' | 'custom';
+  // 'AM' | 'PM' | 'custom' are the beauty schedules this field has always
+  // carried; 'wellness' marks the wellness cabinet. Anything that isn't
+  // 'wellness' is a beauty routine, so routines saved before this existed
+  // keep reading as beauty with no migration.
+  kind: 'AM' | 'PM' | 'custom' | 'wellness';
   steps: RoutineStep[];
   dateCreated: string;
 };

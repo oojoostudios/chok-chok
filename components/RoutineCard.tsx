@@ -19,6 +19,10 @@ export default function RoutineCard({
   const byId = (id?: string) => products.find((p) => p.id === id);
   const filled = routine.steps.filter((s) => s.productId);
   const hasWellness = filled.some((s) => byId(s.productId)?.type === 'wellness');
+  // A wellness routine is a list of supplements: no role labels, and an empty
+  // row would just be noise, so only filled steps are shown.
+  const isWellness = routine.kind === 'wellness';
+  const steps = isWellness ? filled : routine.steps;
 
   return (
     <View style={[styles.card, forShare && styles.cardShare]}>
@@ -27,7 +31,7 @@ export default function RoutineCard({
         <Text style={styles.pillText}>{routine.name.toUpperCase()}</Text>
       </View>
 
-      {routine.steps.map((step, i) => {
+      {steps.map((step, i) => {
         const p = byId(step.productId);
         // Wellness reads goal, beauty reads role — same helper the cabinet uses.
         const tint = p ? styleFor(p).tint : COLORS.sub;
@@ -36,7 +40,7 @@ export default function RoutineCard({
             <View style={styles.stepNum}>
               <Text style={styles.stepNumText}>{String(i + 1).padStart(2, '0')}</Text>
             </View>
-            <Text style={styles.stepLabel}>{step.label}</Text>
+            {step.label ? <Text style={styles.stepLabel}>{step.label}</Text> : null}
 
             {p ? (
               <View style={styles.product}>
