@@ -5,14 +5,19 @@ import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { router } from 'expo-router';
 import Silhouette from '../components/Silhouette';
-import { COLORS, ROLE } from '../theme';
+import { COLORS } from '../theme';
 import { markIntroSeen } from '../introStore';
 
-// No established intro/hero tone exists in the theme, so this reuses the warm
-// blush already in the palette. Keep app.json's splash backgroundColor in sync.
-const GROUND = ROLE.Seal.bg;
-const FIGURE = ROLE.Seal.tintStrong;
-const BODY_INK = ROLE.Seal.ink;
+// The intro is the same room as the rest of the app, so it uses the app ground
+// rather than a hero tone of its own. app.json's splash backgroundColor is
+// COLORS.bg by hand — native splash config cannot import from JS, so the two
+// have to be kept in sync manually.
+const GROUND = COLORS.bg;
+// `chip` is the palette's low-emphasis fill. It sits close enough to `bg` to
+// read as a watermark at full opacity, which is why the 0.1 opacity that the
+// old mauve needed is gone — at that alpha this tone would be invisible.
+const FIGURE = COLORS.chip;
+const BODY_INK = COLORS.sub;
 
 const HEADLINE = 'Shelf care, shared';
 // The \u00A0 binds the last two words so the line can never break to a single
@@ -59,7 +64,7 @@ export default function IntroScreen() {
         pointerEvents="none"
         style={[styles.figure, { top: -width * 0.15, right: -width * 0.45 }]}
       >
-        <Silhouette icon="dropper-1" color={FIGURE} size={width * 1.2} opacity={0.1} solid />
+        <Silhouette icon="dropper-1" color={FIGURE} size={width * 1.2} solid />
       </View>
 
       <Text style={styles.wordmark}>DODAM</Text>

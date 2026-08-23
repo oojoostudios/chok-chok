@@ -37,9 +37,9 @@ export default function CabinetScreen() {
 
   // ─────────────────────────────────────────────────────────────────────────
   // DEV ONLY — REMOVE BEFORE SHIPPING
-  // Scaffolding for re-testing the first-run intro. Delete this handler, the
-  // block that renders it below, the two `devReset*` styles, and the
-  // `resetIntroForTesting` / `DevSettings` imports together.
+  // Scaffolding for re-testing the first-run intro, reached by long-pressing
+  // the Dodam wordmark. Delete this handler, the onLongPress on the wordmark
+  // below, and the `resetIntroForTesting` / `DevSettings` imports together.
   // ─────────────────────────────────────────────────────────────────────────
   const devResetIntro = async () => {
     await resetIntroForTesting();
@@ -59,7 +59,12 @@ export default function CabinetScreen() {
   return (
     <SafeAreaView style={styles.screen}>
       <View style={styles.brandRow}>
-        <Text style={styles.brand}>Dodam</Text>
+        {/* DEV ONLY — the long-press is the intro-reset hatch (see
+            devResetIntro above). __DEV__ is false in release builds, so
+            onLongPress is undefined there and the wordmark is inert. */}
+        <Text style={styles.brand} onLongPress={__DEV__ ? devResetIntro : undefined}>
+          Dodam
+        </Text>
         <Text style={styles.tagline}>routines worth sharing</Text>
       </View>
 
@@ -87,18 +92,6 @@ export default function CabinetScreen() {
           }
         />
       </View>
-
-      {/* ───────────────────────────────────────────────────────────────────
-          DEV ONLY — REMOVE BEFORE SHIPPING
-          __DEV__ is false in release builds, so this is stripped from the
-          production bundle and never ships. Kept deliberately ugly so it is
-          hard to miss. See devResetIntro() above.
-          ─────────────────────────────────────────────────────────────────── */}
-      {__DEV__ && (
-        <Pressable style={styles.devResetBtn} onPress={devResetIntro}>
-          <Text style={styles.devResetText}>DEV ONLY · reset intro + reload</Text>
-        </Pressable>
-      )}
 
       <Pressable style={styles.routinesBtn} onPress={() => router.push('/routines')}>
         <Text style={styles.routinesText}>Routines ›</Text>
@@ -130,8 +123,4 @@ const styles = StyleSheet.create({
 
   routinesBtn: { alignSelf: 'center', marginBottom: 18, backgroundColor: COLORS.ink, borderRadius: 20, paddingHorizontal: 22, paddingVertical: 10 },
   routinesText: { color: '#F6EFEA', fontSize: 14, fontWeight: '600' },
-
-  // DEV ONLY — REMOVE BEFORE SHIPPING (see the block in the tree above)
-  devResetBtn: { alignSelf: 'center', marginBottom: 8, backgroundColor: '#B3261E', borderRadius: 4, paddingHorizontal: 12, paddingVertical: 6 },
-  devResetText: { color: '#FFFFFF', fontSize: 11, fontWeight: '700', letterSpacing: 0.4 },
 });
