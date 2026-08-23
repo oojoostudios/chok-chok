@@ -35,10 +35,18 @@ const TIMINGS: { value: Frequency; label: string }[] = [
 
 const NOTES_MAX = 300;
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+// Muted terracotta — reads as "missing", not as an alarm.
+const ERROR = '#C97A5A';
+
+function Field({ label, required, children }: {
+  label: string; required?: boolean; children: React.ReactNode;
+}) {
   return (
     <View style={styles.field}>
-      <Text style={styles.fieldLabel}>{label}</Text>
+      <Text style={[styles.fieldLabel, required && styles.fieldLabelRequired]}>
+        {label}
+        {required ? <Text style={styles.requiredMark}> *</Text> : null}
+      </Text>
       {children}
     </View>
   );
@@ -70,8 +78,13 @@ export default function AddProductScreen() {
   // Curated list merged with brands the user has typed before.
   const [brandPool, setBrandPool] = useState<string[]>([]);
   const [brandSuggestions, setBrandSuggestions] = useState<string[]>([]);
+  // Set by a save attempt that couldn't go through, so the gaps become visible.
+  const [showErrors, setShowErrors] = useState(false);
 
-  useEffect(() => { allBrands().then(setBrandPool); }, []);
+  // Beauty suggests beauty brands, wellness suggests supplement brands.
+  useEffect(() => {
+    allBrands(type === 'wellness' ? 'wellness' : 'beauty').then(setBrandPool);
+  }, [type]);
 
   useEffect(() => {
     if (!id) return;
@@ -105,6 +118,8 @@ export default function AddProductScreen() {
   // Switching to wellness lands on the capsule so the form is savable sooner.
   const pickType = (next: ProductType) => {
     setType(next);
+    // The pool is about to change under them; drop suggestions from the old one.
+    setBrandSuggestions([]);
     if (next === 'wellness' && !family) {
       setFamily(WELLNESS_DEFAULT_FAMILY);
       setIcon(DEFAULT_ICON[WELLNESS_DEFAULT_FAMILY]);
@@ -132,12 +147,20 @@ export default function AddProductScreen() {
     brandSuggestions.length > 0 &&
     !brandSuggestions.some((b) => b.toLowerCase() === brand.trim().toLowerCase());
   // Beauty needs a role, wellness needs a goal — the same slot on either axis.
-  const canSave = Boolean(
-    brand.trim() && name.trim() && icon && timing && (type === 'wellness' ? goal : role)
-  );
+  // One map drives both the Save gate and which fields get highlighted.
+  const missing = {
+    brand: !brand.trim(),
+    name: !name.trim(),
+    taxonomy: type === 'wellness' ? !goal : !role,
+    icon: !icon,
+    timing: !timing,
+  };
+  const canSave = !Object.values(missing).some(Boolean);
+  // Highlights are derived, so each one clears as soon as its field is filled.
+  const flag = (key: keyof typeof missing) => showErrors && missing[key];
 
   const onSave = async () => {
-    if (!canSave) return;
+    if (!canSave) { setShowErrors(true); return; }
     const wellness = type === 'wellness';
     const product: Product = {
       // Spread first so fields this form doesn't cover (category, buyUrl,
@@ -166,7 +189,8 @@ export default function AddProductScreen() {
       <Pressable onPress={() => router.back()} style={styles.back}><Text style={styles.backX}>‹</Text></Pressable>
       <Text style={styles.title}>{editing ? 'Edit product' : 'Add product'}</Text>
       {hydrated ? (
-        <Pressable onPress={onSave} hitSlop={10} disabled={!canSave}>
+        // Stays tappable while incomplete — that tap is what reveals the gaps.
+        <Pressable onPress={onSave} hitSlop={10}>
           <Text style={[styles.save, !canSave && styles.saveDisabled]}>Save</Text>
         </Pressable>
       ) : (
@@ -207,13 +231,13 @@ export default function AddProductScreen() {
             </View>
           </Field>
 
-          <Field label="BRAND">
+          <Field label="BRAND" required>
             <TextInput
               value={brand}
               onChangeText={onChangeBrand}
-              placeholder="e.g. Beauty of Joseon"
+              placeholder={type === 'wellness' ? 'e.g. Thorne' : 'e.g. Beauty of Joseon'}
               placeholderTextColor={COLORS.sub}
-              style={styles.input}
+              style={[styles.input, flag('brand') && styles.inputError]}
               autoCorrect={false}
               autoCapitalize="words"
             />
@@ -232,19 +256,19 @@ export default function AddProductScreen() {
             ) : null}
           </Field>
 
-          <Field label="PRODUCT">
+          <Field label="PRODUCT" required>
             <TextInput
               value={name}
               onChangeText={setName}
-              placeholder="e.g. Relief Sun"
+              placeholder={type === 'wellness' ? 'e.g. Magnesium Glycinate' : 'e.g. Relief Sun'}
               placeholderTextColor={COLORS.sub}
-              style={styles.input}
+              style={[styles.input, flag('name') && styles.inputError]}
             />
           </Field>
 
           {type === 'wellness' ? (
-            <Field label="GOAL">
-              <View style={styles.pillWrap}>
+            <Field label="GOAL" required>
+              <View style={[styles.pillWrap, flag('taxonomy') && styles.groupError]}>
                 {GOALS.map((g) => {
                   const active = g === goal;
                   const s = GOAL[g];
@@ -261,8 +285,8 @@ export default function AddProductScreen() {
               </View>
             </Field>
           ) : (
-            <Field label="ROLE">
-              <View style={styles.pillWrap}>
+            <Field label="ROLE" required>
+              <View style={[styles.pillWrap, flag('taxonomy') && styles.groupError]}>
                 {ROLES.map((r) => {
                   const active = r === role;
                   const s = ROLE[r];
@@ -280,8 +304,8 @@ export default function AddProductScreen() {
             </Field>
           )}
 
-          <Field label="CONTAINER">
-            <View style={styles.grid}>
+          <Field label="CONTAINER" required>
+            <View style={[styles.grid, flag('icon') && styles.groupError]}>
               {FAMILIES.map((f) => {
                 const active = f.family === family;
                 return (
@@ -323,8 +347,8 @@ export default function AddProductScreen() {
             ) : null}
           </Field>
 
-          <Field label="TIMING">
-            <View style={styles.pillWrap}>
+          <Field label="TIMING" required>
+            <View style={[styles.pillWrap, flag('timing') && styles.groupError]}>
               {TIMINGS.map((t) => {
                 const active = t.value === timing;
                 return (
@@ -387,7 +411,13 @@ const styles = StyleSheet.create({
 
   field: { marginBottom: 22 },
   fieldLabel: { fontSize: 12, letterSpacing: 0.8, textTransform: 'uppercase', color: COLORS.sub, marginBottom: 10 },
-  input: { backgroundColor: COLORS.card, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: COLORS.ink },
+  // Required labels sit a shade darker than optional ones.
+  fieldLabelRequired: { color: COLORS.ink },
+  requiredMark: { color: ERROR },
+  input: { backgroundColor: COLORS.card, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: COLORS.ink, borderWidth: 1, borderColor: 'transparent' },
+  inputError: { borderColor: ERROR },
+  // Wraps a pill row / tile grid whose selection is still missing.
+  groupError: { borderWidth: 1, borderColor: ERROR, borderRadius: 14, padding: 8 },
   notes: { minHeight: 96, paddingTop: 12 },
 
   suggestions: { marginTop: 6, backgroundColor: COLORS.card, borderRadius: 12, overflow: 'hidden' },
